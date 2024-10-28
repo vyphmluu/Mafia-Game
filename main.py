@@ -58,7 +58,7 @@ print("-----Welcome to Mafia-----")
 print("\n")
 
 
-number_of_players = int(input("Enter number of players:"))
+number_of_players = int(input("Enter number of players: "))
 game1 = GameClass(number_of_players)
 
 #add players before starting the game
