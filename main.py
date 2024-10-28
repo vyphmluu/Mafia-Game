@@ -12,6 +12,8 @@ Revisions:
     - 10/25/2024: Jack - Created the three main files and implemented the basic game logic
     - 10/27/2024: Ethan - Created the day_phase and win_condion methods in gameClass
                         - Created this header
+    - 10/27/2024: Vy - Added a dedicated assignRoles, update_role_count and start_game methods to GameClass 
+                     - Added a game-over screen with restart and exit options in main
     - [Date]: [Name] - Blah Blah Blah
     - [Date]: [Name] - Blah Blah Blah
     - [Date]: [Name] - Blah Blah Blah
