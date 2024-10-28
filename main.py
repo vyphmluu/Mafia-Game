@@ -54,29 +54,37 @@ from player import Player
 from gameClass import GameClass
 
 
-print("-----Welcome to Mafia-----")
-print("\n")
+def main():
+    print("-----Welcome to Mafia-----\n")  # Display game title
+    # Prompt for the number of players and create a GameClass instance
+    number_of_players = int(input("Enter number of players: "))
+    game = GameClass(number_of_players)
 
+    # Loop to add players by prompting for each player's name
+    for _ in range(number_of_players):
+        name = input("Enter player name: ").lower()
+        game.add_player(name)  # Add each player to the game
+    
+    # Assign roles to each player in the game
+    game.assignRoles()
 
-number_of_players = int(input("Enter number of players: "))
-game1 = GameClass(number_of_players)
+    # Start the game loop which alternates between day and night phases
+    game.start_game()
 
-#add players before starting the game
-for player in range(number_of_players):
-    game1.add_player()
+    # Display the game-over options once a win condition is met
+    while True:
+        # Offer options to restart or exit
+        choice = input("Game over! Would you like to (R)estart or (E)xit? ").lower()
+        if choice == 'r':
+            # Restart the game
+            main()
+        elif choice == 'e':
+            # Exit the game
+            print("Thank you for playing Mafia!")
+            break
+        else:
+            # Prompt for valid input if an invalid choice is entered
+            print("Invalid choice, please select R or E.")
 
-
-#not necessary for loop, just for checking players and roles
-for player in game1.player_list:
-    print("Name: ", player.name, "Role: ", player.role)
-
-
-#main while loop that runs the full game until its completion
-while game1.gameCompleted == False:
-    game1.day_phase()
-
-
-    if game1.gameCompleted == True:
-        break
-
-    game1.night_phase()
+# Run the main function to start the game initially
+main()
