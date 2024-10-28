@@ -20,25 +20,34 @@ class GameClass:
         self.player_list = [] # List to store player objects
 
     # Method to add a new player to the game
-    def add_player(self):
-        # Prompt the user to enter the player's name and store it in lowercase
-        player_name = input("Enter player name:").lower()
-        print("\n")  # Print a new line
-        
-        # Prompt the user to assign a role to the player (mafia, villager, doctor)
-        player_role = input("Enter role(mafia, villager, doctor):").lower()
-        print("\n")  # Print a new line
+    def add_player(self, name):
+        """Add a new player to the game with a placeholder role."""
+        # Create a new Player instance with a name and no role assigned yet
+        player = Player(role=None, name=name)
+        # Add the player to the player list
+        self.player_list.append(player)
 
-        # Add the player as a Player, with a role and name
-        self.player_list.append(Player(player_role, player_name))
+    def assignRoles(self):
+        """Assign roles to each player after they are added to the game."""
+        for player in self.player_list:
+            # Prompt the user to assign a role for each player
+            role = input(f"Enter role for {player.name} (mafia, villager, doctor): ").lower()
+            # Set the player's role
+            player.role = role
+            # Update the count of each role based on the assigned role
+            self.update_role_count(role, increment=True)
 
-        # Update the count of each role based on the player's assigned role
-        if player_role == "mafia":
-            self.num_mafia += 1  
-        elif player_role == "doctor":
-            self.num_doctors += 1  
-        else:
-            self.num_villagers += 1 
+    def update_role_count(self, role, increment=True):
+        """Update the count of each role based on the player's assigned role."""
+        if role == "mafia":
+            # Increment or decrement the mafia count based on the `increment` flag
+            self.num_mafia += 1 if increment else -1
+        elif role == "doctor":
+            # Increment or decrement the doctor count based on the `increment` flag
+            self.num_doctors += 1 if increment else -1
+        elif role == "villager":
+            # Increment or decrement the villager count based on the `increment` flag
+            self.num_villagers += 1 if increment else -1
 
     def day_phase(self):
         # Initialize a dictionary to store vote counts for each player
@@ -133,15 +142,25 @@ class GameClass:
             # Display the victory message for the mafia
             print("Mafia wins!")
 
+    def start_game(self):
+        """Main game loop that alternates between day and night phases."""
+        while not self.gameCompleted:
+            # Run the day phase
+            self.day_phase()
+            if self.gameCompleted:
+                # Break if a win condition has been met
+                break
+            # Run the night phase
+            self.night_phase()
+
     def clear_console(self):
-        # For Windows
+        """Utility function to clear the console."""
+        # Clear console for Windows
         if os.name == 'nt':
             os.system('cls')
-        # For MacOS and Linux
+        # Clear console for MacOS and Linux
         else:
             os.system('clear')
-
-
 
 
 
