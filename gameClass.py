@@ -9,6 +9,7 @@ Description:
 
 from player import Player
 import os
+import random
 
 class GameClass:
     def __init__(self, players):
@@ -114,17 +115,70 @@ class GameClass:
         self.check_win_conditions()
 
     def night_phase(self):
+        print("Night Phase: Everyone, close your eyes.")
+        input("Press any key to continue...")
+        self.clear_console()
 
-        #mafia choose someone to kill (maybe more than 1 for more players/mafia)
+        # Mafia Voting Phase
+        print("Mafia, open your eyes.")
+        print("Mafia, choose a player to eliminate.")
+        
+        mafia_votes = {}  # Dictionary to store votes for each target
+        for player in self.player_list:
+            if player.role == "mafia" and player.status == "alive":
+                target_name = input(f"{player.name} (Mafia), choose your target: ").lower()
+                target_player = next((p for p in self.player_list if p.name == target_name and p.status == "alive"), None)
+                if target_player:
+                    player.mafia_action(target_player)  # Mafia player uses mafia_action method
+                    mafia_votes[target_player] = mafia_votes.get(target_player, 0) + 1
+                self.clear_console()
 
-        #doctors choose someone to protect
+        # Determine final target with most votes
+        target = None
+        if mafia_votes:
+            max_votes = max(mafia_votes.values())
+            targets_with_max_votes = [p for p, votes in mafia_votes.items() if votes == max_votes]
+            target = random.choice(targets_with_max_votes) if len(targets_with_max_votes) > 1 else targets_with_max_votes[0]
+            print(f"Mafia has chosen to target {target.name}.")  # Announce chosen target
 
-        #villagers do nothing
+        # Close Mafia phase
+        print("Mafia, close your eyes.")
+        input("Press any key to continue...")
+        self.clear_console()
 
-        #dead players do not interact
+        # Doctor Voting Phase
+        print("Doctor, open your eyes.")
+        print("Doctor, choose a player to protect.")
 
+        for player in self.player_list:
+            if player.role == "doctor" and player.status == "alive":
+                target_name = input(f"{player.name} (Doctor), choose a player to protect: ").lower()
+                target_player = next((p for p in self.player_list if p.name == target_name and p.status == "alive"), None)
+                if target_player:
+                    player.doctor_action(target_player)  # Doctor uses doctor_action method
+                self.clear_console()
 
-       # Check win conditions after the voting phase
+        # Close Doctor phase
+        print("Doctor, close your eyes.")
+        input("Press any key to continue...")
+        self.clear_console()
+
+        # Announce day and resolve night actions
+        print("Everyone, open your eyes.")
+        print("The day begins...")
+
+        # Resolve night actions based on Mafia target and Doctor protection
+        if target and not target.protected:
+            target.status = "dead"  # Mark as dead if unprotected
+            print(f"{target.name} was killed during the night.")
+        elif target and target.protected:
+            print(f"{target.name} was protected by the Doctor and survived the night.")
+
+        # Reset night actions for all players
+        for player in self.player_list:
+            player.reset_night_actions()
+
+        # Check win conditions
         self.check_win_conditions()
 
     def check_win_conditions(self):
