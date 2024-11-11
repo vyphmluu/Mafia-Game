@@ -19,6 +19,8 @@ class GameClass:
         self.num_villagers = 0 # Counter for villager players
         self.gameCompleted = False # Boolean value to indicate if the game has ended
         self.player_list = [] # List to store player objects
+        self.round_cycle = 0 # Tracks if the game has gone through a full day/night cycle (for target history mafia method)
+        self.mafia_votes = {}
 
     # Method to add a new player to the game
     def add_player(self, name):
@@ -72,10 +74,15 @@ class GameClass:
                 print(f"\n{player.name} is voting...")
                 # Generate a list of names of alive players except the current player
                 alive_players = [p.name for p in self.player_list if p.status == "alive" and p.name != player.name]
+                # Print Mafia allies if player if mafia role
+                if player.role == "mafia":
+                    print(f"\nMafia Allies: {self.mafia_ally_list(player.name)}")
                 # Display alive players
                 print("Players available to vote for:", ', '.join(alive_players)) 
                 # Prompt the player to enter the name of the player they want to eliminate
                 vote_for = input(f"{player.name}, who do you vote to eliminate? ")
+                if player.role == "mafia":
+                    self.targetHistory(player, vote_for)
                 vote_for = vote_for.lower()  # Convert input to lowercase for consistency
                 
                 # Ensure the player does not vote for themselves
@@ -132,6 +139,8 @@ class GameClass:
         mafia_votes = {}  # Dictionary to store votes for each target
         for player in self.player_list:
             if player.role == "mafia" and player.status == "alive":
+                print(f"{self.mafia_votes}")
+                print(f"Mafia Allies: {self.mafia_allies_list(player.name)}")
                 target_name = input(f"{player.name} (Mafia), choose your target: ").lower()
                 target_player = next((p for p in self.player_list if p.name == target_name and p.status == "alive"), None)
                 if target_player:
@@ -227,7 +236,18 @@ class GameClass:
         if not self.game_over:
             self.day_phase()
 
+    # Returns the list of mafia allies
+    def mafia_ally_list(self, cur_player):
+        ally_list = []
+        for player in self.player_list:
+            if player.role == "mafia" and player.status == "alive" and player.name != cur_player:
+                ally_list.append(player.name)
+        return ", ".join(ally_list)
 
-
-
-
+    def targetHistory(self, cur_player, day_vote):
+        history = {} # store mafia member's day cycle votes
+        for player in self.player_list:
+            if player.role == "mafia" and player.status == "alive" and player.name != cur_player:
+                history[cur_player] = day_vote
+        self.mafia_votes = history
+        return self.mafia_votes
