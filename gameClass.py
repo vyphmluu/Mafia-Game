@@ -29,14 +29,20 @@ class GameClass:
         self.player_list.append(player)
 
     def assignRoles(self):
-        """Assign roles to each player after they are added to the game."""
-        for player in self.player_list:
-            # Prompt the user to assign a role for each player
-            role = input(f"Enter role for {player.name} (mafia, villager, doctor): ").lower()
+        """Assigns roles randomly to players and updates the role count."""
+        available_roles = self.roles.copy()  # Ensure roles are randomly assigned
+        random.shuffle(available_roles)  # Shuffle roles to randomize assignment
+        for player in self.players:
+            # Assign a random role from the available list
+            role = available_roles.pop()
             # Set the player's role
             player.role = role
             # Update the count of each role based on the assigned role
             self.update_role_count(role, increment=True)
+            # Optionally, you can print the assigned roles for debugging
+            print(f"{player.name} has been assigned the role of {role}.")
+        # Print the updated role count
+        print("Updated role count:", self.role_count)
 
     def update_role_count(self, role, increment=True):
         """Update the count of each role based on the player's assigned role."""
@@ -89,7 +95,7 @@ class GameClass:
                     print(f"{vote_for} is either not found or not alive. Vote is skipped.")
             # Clear the console after each vote to keep input secret
             self.clear_console()  
-        
+
         # Check if there are any votes recorded (skip if no one voted or votes were invalid)
         if votes:
             # Find the player with the most votes
@@ -215,6 +221,11 @@ class GameClass:
         # Clear console for MacOS and Linux
         else:
             os.system('clear')
+
+    def fullRound(self):
+        self.night_phase()
+        if not self.game_over:
+            self.day_phase()
 
 
 
