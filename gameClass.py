@@ -22,6 +22,21 @@ class GameClass:
         self.round_cycle = 0 # Tracks if the game has gone through a full day/night cycle (for target history mafia method)
         self.mafia_votes = {}
         self.game_mode = game_mode
+        self.game_difficulty = 0
+
+    def ai_mode(self):
+        input_flag = True
+        while input_flag:
+            print(f"Please Choose A Difficulty Setting:")
+            print(f"1) Easy Mode")
+            print(f"2) Normal Mode")
+            print(f"3) Hard Mode")
+            choice = input("Enter a choice: ")
+            if choice in {'1', '2', '3'}:
+                self.game_difficulty == int(choice)
+                return self.game_difficulty
+            else:
+                print(f"Invalid input. Enter 1, 2, or 3.")
 
     # Method to add a new player to the game
     def add_player(self, name):
@@ -58,8 +73,9 @@ class GameClass:
         
         # Debugging output to check balance
         print(f"Roles distribution: Mafia: {num_mafia}, Doctor: {num_doctors}, Detective: {num_detective}, Villagers: {num_villagers}")
-
-        self.role_call()  # Perform the private role call
+        
+        if self.game_mode == 2:
+            self.role_call()  # Perform the private role call
 
     def role_call(self):
         """Privately informs each player of their assigned role with double prompts for GM and player."""

@@ -82,12 +82,15 @@ def main():
         print("Exiting Program...")
         sys.exit("Exit Complete.")
 
-    print("-----Welcome to Mafia-----\n")  # Display game title
     if mode == '1':
         print(f"Player Mode: Singleplayer")
         game = GameClass(1, int(mode))
         name = input("Enter player name: ").lower
         game.add_player(name)
+
+        # Choose an AI Mode
+        game.ai_mode() 
+
         game.assignRoles()
         game.start_game()
 
