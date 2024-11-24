@@ -27,20 +27,33 @@ class GameClass:
         self.player_list.append(player)
 
     def assignRoles(self):
-        """ Assigns roles randomly to players and updates the role count. """
-        roles = ['mafia', 'doctor', 'detective', 'villager']
-        num_mafia = max(1, self.num_players // 3)
-        num_detective = 1 if self.num_players > 5 else 0
-        num_doctors = 1 if self.num_players > 4 else 0
-        num_villagers = self.num_players - (num_mafia + num_detective + num_doctors)
-        roles = ['mafia'] * num_mafia + ['detective'] * num_detective + ['doctor'] * num_doctors + ['villager'] * num_villagers
+        """ Dynamically assigns roles to players based on the number of players. """
+        # Calculate number of roles based on player count
+        num_mafia = max(1, self.num_players // 3)  # At least 1 mafia, ~1/3 of players
+        num_detective = 1 if self.num_players >= 5 else 0  # 1 detective for 5+ players
+        num_doctors = 1 if self.num_players >= 4 else 0  # 1 doctor for 4+ players
+        num_villagers = self.num_players - (num_mafia + num_detective + num_doctors)  # Remaining players are villagers
+
+        # Create a role list based on calculated numbers
+        roles = (
+            ['mafia'] * num_mafia +
+            ['detective'] * num_detective +
+            ['doctor'] * num_doctors +
+            ['villager'] * num_villagers
+        )
+        
+        # Shuffle roles to ensure randomness
         random.shuffle(roles)
+
+        # Assign roles to players and update role counts
         for player in self.player_list:
-            role = roles.pop()
+            role = roles.pop()  # Assign a role from the shuffled list
             player.role = role
             self.update_role_count(role, increment=True)
             print(f"{player.name} has been assigned the role of {role}.")
-        print(f"Updated role count: Mafia: {self.num_mafia}, Doctor: {self.num_doctors}, Detective: {num_detective}, Villager: {num_villagers}")
+        
+        # Debugging output to check balance
+        print(f"Roles distribution: Mafia: {num_mafia}, Doctor: {num_doctors}, Detective: {num_detective}, Villagers: {num_villagers}")
 
     def update_role_count(self, role, increment):
         """ Updates the count of each role based on the player's assigned role. """
