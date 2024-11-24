@@ -54,24 +54,60 @@ Known Faults:
 
 from player import Player
 from gameClass import GameClass
+import os
+import sys
 
+def main_menu():
+    power_flag = True
+    print("-----Welcome to Mafia-----\n")
+    while power_flag:
+        # Prompt the user to choose between single or multiplayer
+        print("Singleplayer or Multiplayer?")
+        print("1) Singleplayer")
+        print("2) Multiplayer")
+        print("3) Exit")
+        gamemode = input("Enter a choice: ")
+
+        if gamemode in {'1', '2', '3'}:
+            return gamemode
+        else:
+            print('Invalid Input. Please enter 1, 2, or 3.')
 
 def main():
+    os.system('cls' if os.name == 'nt' else 'clear') # Clear the terminal
+
+    mode = main_menu()
+
+    if mode == '3':
+        print("Exiting Program...")
+        sys.exit("Exit Complete.")
+
     print("-----Welcome to Mafia-----\n")  # Display game title
-    # Prompt for the number of players and create a GameClass instance
-    number_of_players = int(input("Enter number of players: "))
-    game = GameClass(number_of_players)
+    if mode == '1':
+        print(f"Player Mode: Singleplayer")
+        game = GameClass(1, int(mode))
+        name = input("Enter player name: ").lower
+        game.add_player(name)
+        game.assignRoles()
+        game.start_game()
 
-    # Loop to add players by prompting for each player's name
-    for _ in range(number_of_players):
-        name = input("Enter player name: ").lower()
-        game.add_player(name)  # Add each player to the game
+    if mode == '2':
+        print(f"Player Mode: Multiplayer\n")
     
-    # Assign roles to each player in the game
-    game.assignRoles()
+        # Prompt for the number of players and create a GameClass instance
+        number_of_players = int(input("Enter number of players: "))
+        game = GameClass(number_of_players, int(mode))
 
-    # Start the game loop which alternates between day and night phases
-    game.start_game()
+        # Loop to add players by prompting for each player's name
+        for _ in range(number_of_players):
+            name = input("Enter player name: ").lower()
+            game.add_player(name)  # Add each player to the game
+    
+        # Assign roles to each player in the game
+        game.assignRoles()
+
+        # Start the game loop which alternates between day and night phases
+        game.start_game()
 
     # Display the game-over options once a win condition is met
     while True:
