@@ -23,6 +23,20 @@ class GameClass:
         self.mafia_votes = {}
         self.game_mode = game_mode
 
+    def ai_mode(self):
+        input_flag = True
+        while input_flag:
+            print(f"Please Choose A Difficulty Setting:")
+            print(f"1) Easy Mode")
+            print(f"2) Normal Mode")
+            print(f"3) Hard Mode")
+            choice = input("Enter a choice: ")
+            if choice in {'1', '2', '3'}:
+                self.game_difficulty == int(choice)
+                return self.game_difficulty
+            else:
+                print(f"Invalid input. Enter 1, 2, or 3.")
+
     # Method to add a new player to the game
     def add_player(self, name):
         """Add a new player to the game with a placeholder role."""
