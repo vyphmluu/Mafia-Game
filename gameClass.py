@@ -28,7 +28,57 @@ class GameClass:
     def easy_ai(self, cur_list):
         random_vote = random.choice(cur_list)
         return random_vote
+        
+    def hard_ai_actions(self):
+        # Collect relevant player groups for targeted actions
+        non_mafia = [p for p in self.player_list if p.role != 'mafia' and p.status == 'alive']
+        unknown_players = [p for p in non_mafia if p.role is None]  # Players whose roles are not confirmed
 
+        for player in self.player_list:
+            if player.role == 'mafia' and player.status == 'alive':
+                target = self.select_priority_target(non_mafia)
+                player.mafia_action(target)
+
+            elif player.role == 'doctor' and player.status == 'alive':
+                target = self.select_protective_target(non_mafia)
+                player.doctor_action(target)
+
+            elif player.role == 'detective' and player.status == 'alive':
+                target = self.detective_select_target(unknown_players)
+                player.detective_action(target)
+
+        # Automated day phase voting based on current knowledge
+        self.simulate_strategic_voting()
+    
+    def select_priority_target(self, targets):
+        # Mafia targets critical roles first, then any non-mafia
+        priority_targets = [p for p in targets if p.role in ['detective', 'doctor']]
+        return random.choice(priority_targets) if priority_targets else random.choice(targets)
+
+    def select_protective_target(self, targets):
+        # Doctor protects based on previous targeting or critical role
+        return max(targets, key=lambda x: (self.target_history.get(x.name, 0), x.role in ['detective']))
+
+    def detective_select_target(self, targets):
+        # Detective checks a new player each night, prioritizing those with suspicious behavior
+        return random.choice(targets)  # Replace with more nuanced logic based on behavior
+
+    def simulate_strategic_voting(self):
+        for player in self.player_list:
+            if player.status == 'alive':
+                player.vote(self.strategic_vote(player))
+
+    def strategic_vote(self, player):
+        # Players vote based on detected Mafia or most suspicious behavior
+        if player.role == 'villager':
+            suspected_mafia = [p for p in self.player_list if self.is_suspected_mafia(p)]
+            return random.choice(suspected_mafia) if suspected_mafia else None
+        return None
+
+    def is_suspected_mafia(self, player):
+        # Example placeholder for suspicion logic
+        return player.role == 'mafia' and player.has_been_suspicious
+        
     def ai_mode(self):
         input_flag = True
         while input_flag:
@@ -173,7 +223,8 @@ class GameClass:
 
                 # Display players available to vote for
                 visual_friendly_alive_players = [p.name for p in self.player_list if p.status == "alive" and p.name != player.name] # for visual purposes
-                alive_players = [p.name.lower() for p in self.player_list if p.status == "alive" and p.name != player.name] # to match .lower user input
+                alive_players = [p.name.lower() for p in self.player_list if p.status == "alive" and p.name != player.name]
+ # to match .lower user input
                 print("Players available to vote for:", ', '.join(visual_friendly_alive_players))
 
                 # Prompt the player to cast their vote
