@@ -22,21 +22,6 @@ class GameClass:
         self.round_cycle = 0 # Tracks if the game has gone through a full day/night cycle (for target history mafia method)
         self.mafia_votes = {}
         self.game_mode = game_mode
-        self.game_difficulty = 0
-
-    def ai_mode(self):
-        input_flag = True
-        while input_flag:
-            print(f"Please Choose A Difficulty Setting:")
-            print(f"1) Easy Mode")
-            print(f"2) Normal Mode")
-            print(f"3) Hard Mode")
-            choice = input("Enter a choice: ")
-            if choice in {'1', '2', '3'}:
-                self.game_difficulty == int(choice)
-                return self.game_difficulty
-            else:
-                print(f"Invalid input. Enter 1, 2, or 3.")
 
     # Method to add a new player to the game
     def add_player(self, name):
@@ -45,6 +30,11 @@ class GameClass:
         player = Player(role=None, name=name)
         # Add the player to the player list
         self.player_list.append(player)
+
+    def assign_villager_attribute(self):
+        """Assigns a random passive attribute to a villager."""
+        attributes = ["Intuition", "Suspicion Radar"]
+        return random.choice(attributes)
 
     def assignRoles(self):
         """ Dynamically assigns roles to players based on the number of players. """
@@ -70,12 +60,14 @@ class GameClass:
             role = roles.pop()  # Assign a role from the shuffled list
             player.role = role
             self.update_role_count(role, increment=True)
+
+            if role == "villager":
+                player.attribute = self.assign_villager_attribute()
         
         # Debugging output to check balance
         print(f"Roles distribution: Mafia: {num_mafia}, Doctor: {num_doctors}, Detective: {num_detective}, Villagers: {num_villagers}")
-        
-        if self.game_mode == 2:
-            self.role_call()  # Perform the private role call
+
+        self.role_call()  # Perform the private role call
 
     def role_call(self):
         """Privately informs each player of their assigned role with double prompts for GM and player."""
@@ -93,6 +85,11 @@ class GameClass:
                 self.clear_console()
                 print(f"{player.name.capitalize()}, it's your turn to check your role.")
                 print(f"Your role is: {player.role.capitalize()}")
+
+                # Additional information for villagers
+                if player.attribute:
+                    print(f"Your special ability is: {player.attribute.capitalize()}")
+
                 input("Press Enter when you have seen your role.")  # Player confirms they've seen the role
 
             else:
@@ -116,71 +113,69 @@ class GameClass:
             self.num_villagers += 1 if increment else -1
 
     def day_phase(self):
-        # Initialize a dictionary to store vote counts for each player
-        votes = {}
-        
-        # Start the day phase with a prompt for players to vote
+        """Handles the day phase, allowing players to vote while displaying private role-specific information."""
         print("Day Phase: Time to vote!")
-        # Halt execution until the user presses any key to continue
-        input("Press any key to continue...")
-        # Loop through each player in the game
-        for player in self.player_list:
-            # Check if the player is alive. Only alive players can vote
-            if player.status == "alive":
-                # Display the voting player's name
-                print(f"\n{player.name} is voting...")
-                # Generate a list of names of alive players except the current player
-                alive_players = [p.name for p in self.player_list if p.status == "alive" and p.name != player.name]
-                # Print Mafia allies if player if mafia role
-                if player.role == "mafia":
-                    print(f"\nMafia Allies: {self.mafia_ally_list(player.name)}")
-                # Display alive players
-                print("Players available to vote for:", ', '.join(alive_players)) 
-                # Prompt the player to enter the name of the player they want to eliminate
-                vote_for = input(f"{player.name}, who do you vote to eliminate? ")
-                if player.role == "mafia":
-                    self.targetHistory(player, vote_for)
-                vote_for = vote_for.lower()  # Convert input to lowercase for consistency
-                
-                # Ensure the player does not vote for themselves
-                if vote_for == player.name:
-                    print("You cannot vote for yourself. Skipping vote.")  # Display message for invalid self-vote
-                    continue  # Skip to the next player if they voted for themselves
-                
-                # Find the player who matches the voted name and is alive
-                voted_player = next((p for p in self.player_list if p.name == vote_for and p.status == "alive"), None)
-                
-                # If the voted player is found and alive, record the vote
-                if voted_player:
-                    # Increment the vote count for the selected player
-                    votes[vote_for] = votes.get(vote_for, 0) + 1
-                else:
-                    # Display a message if the vote was invalid (player not found or dead)
-                    print(f"{vote_for} is either not found or not alive. Vote is skipped.")
-            # Clear the console after each vote to keep input secret
-            self.clear_console()  
+        input("Press Enter to begin the day phase...")
+        self.clear_console()
 
-        # Check if there are any votes recorded (skip if no one voted or votes were invalid)
+        # Initialize a dictionary to store vote counts
+        votes = {}
+
+        # Call each player individually
+        for player in self.player_list:
+            if player.status == "alive":
+                # Clear the console for privacy
+                self.clear_console()
+                print(f"{player.name.capitalize()}, please come to the screen.")
+                input("Press Enter when the player is ready...")
+
+                # Clear again for the player to view their private information
+                self.clear_console()
+
+                # Display private information for Mafia or special abilities
+                if player.role == "mafia":
+                    print(f"Your Mafia allies are: {self.mafia_ally_list(player.name)}")
+                if player.attribute == "Intuition":
+                    # Provide subtle hints (e.g., role probabilities for one random player)
+                    hint_player = random.choice([p for p in self.player_list if p != player and p.status == "alive"])
+                    hint = f"Your intuition suggests that {hint_player.name} might {'' if random.random() > 0.2 else 'NOT'} be Mafia."
+                    print(f"Hint for {player.name}: {hint}")
+                    input("Press Enter to continue...")
+
+                # Display players available to vote for
+                alive_players = [p.name for p in self.player_list if p.status == "alive" and p.name != player.name]
+                print("Players available to vote for:", ', '.join(alive_players))
+
+                # Prompt the player to cast their vote
+                vote_for = input(f"{player.name}, who do you vote to eliminate? ").lower()
+                while vote_for not in alive_players:
+                    print(f"Invalid choice. Please select from: {', '.join(alive_players)}")
+                    vote_for = input(f"{player.name}, who do you vote to eliminate? ").lower()
+
+                # Record the vote
+                votes[vote_for] = votes.get(vote_for, 0) + 1
+
+                # Clear the console before transitioning back to GM
+                self.clear_console()
+                input("Press Enter to proceed to the next player.")
+            else:
+                print(f"{player.name.capitalize()} is not in the game.")
+
+        # Determine the player with the most votes
         if votes:
-            # Find the player with the most votes
-            max_votes_player = max(votes, key=votes.get)
-            
-            # Retrieve the actual player object of the player with the most votes
-            eliminated_player = next((p for p in self.player_list if p.name == max_votes_player), None)
-            
-            # If the player is found, update their status to "dead"
-            if eliminated_player:
-                eliminated_player.status = "dead"  # Set the player's status to dead
-                print(f"{eliminated_player.name} has been eliminated.")  # Display elimination message
-                
-                # Adjust the player count for the eliminated player's role
-                if eliminated_player.role == "mafia":
-                    self.num_mafia -= 1  # Decrease mafia count if a mafia member is eliminated
-                elif eliminated_player.role == "doctor":
-                    self.num_doctors -= 1  # Decrease doctor count if a doctor is eliminated
-                else:
-                    self.num_villagers -= 1  # Decrease villager count if a villager is eliminated
-        
+            max_votes = max(votes.values())
+            candidates = [name for name, count in votes.items() if count == max_votes]
+
+            # Handle ties with random selection
+            eliminated_player = random.choice(candidates) if len(candidates) > 1 else candidates[0]
+            eliminated_player_obj = next((p for p in self.player_list if p.name == eliminated_player), None)
+
+            # Eliminate the chosen player
+            if eliminated_player_obj:
+                eliminated_player_obj.status = "dead"
+                print(f"{eliminated_player_obj.name.capitalize()} has been eliminated.")
+                self.update_role_count(eliminated_player_obj.role, increment=False)
+
         # Check win conditions after the voting phase
         self.check_win_conditions()
 
@@ -196,9 +191,9 @@ class GameClass:
         mafia_votes = {}  # Dictionary to store votes for each target
         for player in self.player_list:
             if player.role == "mafia" and player.status == "alive":
-                print(f"{self.mafia_votes}")
-                print(f"Mafia Allies: {self.mafia_allies_list(player.name)}")
-                target_name = input(f"{player.name} (Mafia), choose your target: ").lower()
+                print(f"Mafia votes: {self.mafia_votes}")
+                print(f"Mafia Allies: {self.mafia_ally_list(player.name)}")
+                target_name = input(f"{player.name.capitalize()} (Mafia), choose your target: ").lower()
                 target_player = next((p for p in self.player_list if p.name == target_name and p.status == "alive"), None)
                 if target_player:
                     player.mafia_action(target_player)  # Mafia player uses mafia_action method
@@ -232,6 +227,21 @@ class GameClass:
 
         # Close Doctor phase
         print("Doctor, close your eyes.")
+        input("Press any key to continue...")
+        self.clear_console()
+
+        # Villager Suspicion Radar Phase
+        print("Villagers with Suspicion Radar, open your eyes.")
+        for player in self.player_list:
+            if player.role == "villager" and player.status == "alive" and player.attribute == "Suspicion Radar":
+                if player.name in mafia_votes:
+                    print(f"{player.name}, your Suspicion Radar detects that someone voted for you last night.")
+                else:
+                    print(f"{player.name}, your Suspicion Radar is calm tonight.")
+                input("Press Enter to continue...")
+                self.clear_console()
+
+        print("Villagers, close your eyes.")
         input("Press any key to continue...")
         self.clear_console()
 
