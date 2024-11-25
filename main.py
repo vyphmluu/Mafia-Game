@@ -83,13 +83,17 @@ def main():
         sys.exit("Exit Complete.")
 
     if mode == '1':
-        print(f"Player Mode: Singleplayer")
-        game = GameClass(1, int(mode))
+        print(f"Player Mode: Single Player")
+        game = GameClass(10, int(mode))
         name = input("Enter player name: ").lower
         game.add_player(name)
 
         # Choose an AI Mode
-        game.ai_mode() 
+        game.ai_mode()
+        
+        name_list = ["John", "Bob", "Robin", "Elizabeth", "Alice", "Danny", "Alphonso", "Sedrick", "Darius"]
+        for player in name_list:
+            game.add_player(player)
 
         game.assignRoles()
         game.start_game()

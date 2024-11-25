@@ -22,6 +22,7 @@ class GameClass:
         self.round_cycle = 0 # Tracks if the game has gone through a full day/night cycle (for target history mafia method)
         self.mafia_votes = {}
         self.game_mode = game_mode
+        self.game_difficulty = 0
 
     def ai_mode(self):
         input_flag = True
@@ -85,6 +86,11 @@ class GameClass:
 
     def role_call(self):
         """Privately informs each player of their assigned role with double prompts for GM and player."""
+        singleplayer = self.player_list[0].role.capitalize()
+        if self.game_mode == 1:
+            print(f"\nPlayer, your role is: {singleplayer}")
+            return
+
         print("\nRole Call: Each player will learn their role privately.")
         input("Press Enter to begin the role call...")
 
