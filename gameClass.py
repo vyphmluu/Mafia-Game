@@ -23,9 +23,10 @@ class GameClass:
         self.mafia_votes = {}
         self.game_mode = game_mode
         self.game_difficulty = 0
+        self.main_player
 
-    def easy_ai(self):
-        random_vote = random.choice(player_list)
+    def easy_ai(self, cur_list):
+        random_vote = random.choice(cur_list)
         return random_vote
 
     def ai_mode(self):
@@ -42,6 +43,10 @@ class GameClass:
             else:
                 print(f"Invalid input. Enter 1, 2, or 3.")
 
+    def main_player(self, name):
+        self.main_player = name
+        return self.main_player
+    
     # Method to add a new player to the game
     def add_player(self, name):
         """Add a new player to the game with a placeholder role."""
@@ -172,13 +177,20 @@ class GameClass:
                 print("Players available to vote for:", ', '.join(visual_friendly_alive_players))
 
                 # Prompt the player to cast their vote
-                vote_for = input(f"{player.name}, who do you vote to eliminate? ").lower()
-                while vote_for not in alive_players:
-                    print(f"Invalid choice. Please select from: {', '.join(visual_friendly_alive_players)}")
+                print(f"{self.player_list[0]}")
+                if self.game_mode == 2 or (self.game_mode == 1 and player.name == self.main_player):
                     vote_for = input(f"{player.name}, who do you vote to eliminate? ").lower()
+                    while vote_for not in alive_players:
+                        print(f"Invalid choice. Please select from: {', '.join(visual_friendly_alive_players)}")
+                        vote_for = input(f"{player.name}, who do you vote to eliminate? ").lower()
 
-                # Record the vote
-                votes[vote_for] = votes.get(vote_for, 0) + 1
+                    # Record the vote
+                    votes[vote_for] = votes.get(vote_for, 0) + 1
+
+                if self.game_mode == 1 and player.name != self.player_list[0]:
+                    vote_for = self.easy_ai(alive_players)
+                    votes[vote_for] = votes.get(vote_for, 0) + 1
+
 
                 # Clear the console before transitioning back to GM
                 self.clear_console()
