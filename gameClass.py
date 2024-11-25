@@ -24,6 +24,10 @@ class GameClass:
         self.game_mode = game_mode
         self.game_difficulty = 0
 
+    def easy_ai(self):
+        random_vote = random.choice(player_list)
+        return random_vote
+
     def ai_mode(self):
         input_flag = True
         while input_flag:
