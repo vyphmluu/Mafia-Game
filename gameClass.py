@@ -93,7 +93,7 @@ class GameClass:
         singleplayer = self.player_list[0].role.capitalize()
         if self.game_mode == 1:
             print(f"\nPlayer, your role is: {singleplayer}")
-            return
+            return 
 
         print("\nRole Call: Each player will learn their role privately.")
         input("Press Enter to begin the role call...")
@@ -167,13 +167,14 @@ class GameClass:
                     input("Press Enter to continue...")
 
                 # Display players available to vote for
-                alive_players = [p.name for p in self.player_list if p.status == "alive" and p.name != player.name]
-                print("Players available to vote for:", ', '.join(alive_players))
+                visual_friendly_alive_players = [p.name for p in self.player_list if p.status == "alive" and p.name != player.name] # for visual purposes
+                alive_players = [p.name.lower() for p in self.player_list if p.status == "alive" and p.name != player.name] # to match .lower user input
+                print("Players available to vote for:", ', '.join(visual_friendly_alive_players))
 
                 # Prompt the player to cast their vote
                 vote_for = input(f"{player.name}, who do you vote to eliminate? ").lower()
                 while vote_for not in alive_players:
-                    print(f"Invalid choice. Please select from: {', '.join(alive_players)}")
+                    print(f"Invalid choice. Please select from: {', '.join(visual_friendly_alive_players)}")
                     vote_for = input(f"{player.name}, who do you vote to eliminate? ").lower()
 
                 # Record the vote

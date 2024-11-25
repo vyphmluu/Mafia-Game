@@ -11,6 +11,7 @@ class Player:
         self.protected = False  # Indicates if the player is protected for the night
         self.night_target = None  # Target chosen by the player during the night phase (if applicable)
         self.investigated = None  # Target investigated by the detective (if applicable)
+        self.attribute = None
 
     def mafia_action(self, target):
         """ Sets the target for the Mafia to kill. """
