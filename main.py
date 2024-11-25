@@ -85,7 +85,7 @@ def main():
     if mode == '1':
         print(f"Player Mode: Single Player")
         game = GameClass(10, int(mode))
-        name = input("Enter player name: ").lower
+        name = input("Enter player name: ").lower()
         game.add_player(name)
 
         # Choose an AI Mode
