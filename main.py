@@ -210,7 +210,6 @@ class MafiaGameApp:
         messagebox.showinfo("Game Over", "Game has ended!")
         self.create_main_menu()
 
-
 #Run the game application
 if __name__ == "__main__":
     root = Tk()

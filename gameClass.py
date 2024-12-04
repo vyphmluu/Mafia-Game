@@ -23,7 +23,7 @@ class GameClass:
         self.mafia_votes = {}
         self.game_mode = game_mode
         self.game_difficulty = 0
-        self.main_player
+        self.main_player = None
 
     def easy_ai(self, cur_list):
         random_vote = random.choice(cur_list)
@@ -91,7 +91,7 @@ class GameClass:
             print(f"3) Hard Mode")
             choice = input("Enter a choice: ")
             if choice in {'1', '2', '3'}:
-                self.game_difficulty == int(choice)
+                self.game_difficulty = int(choice)
                 return self.game_difficulty
             else:
                 print(f"Invalid input. Enter 1, 2, or 3.")
@@ -103,10 +103,17 @@ class GameClass:
     # Method to add a new player to the game
     def add_player(self, name):
         """Add a new player to the game with a placeholder role."""
+        # Check if the name already exists in the player list
+        if any(player.name == name for player in self.player_list):
+            print(f"Error: The name '{name}' is already taken. Please choose a different name.")
+            return False  # Return False to indicate the player was not added
+
         # Create a new Player instance with a name and no role assigned yet
         player = Player(role=None, name=name)
+        
         # Add the player to the player list
         self.player_list.append(player)
+        return True  # Return True to indicate the player was successfully added
 
     def assign_villager_attribute(self):
         """Assigns a random passive attribute to a villager."""
