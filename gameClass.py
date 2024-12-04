@@ -28,7 +28,10 @@ class GameClass:
     def easy_ai(self, cur_list):
         random_vote = random.choice(cur_list)
         return random_vote
-        
+    
+    def normal_ai(self):
+        return None
+
     def hard_ai_actions(self):
         # Collect relevant player groups for targeted actions
         non_mafia = [p for p in self.player_list if p.role != 'mafia' and p.status == 'alive']
@@ -130,14 +133,18 @@ class GameClass:
         random.shuffle(roles)
 
         # Assign roles to players and update role counts
+        attributes = ["Intuition", "Suspicion Radar"]  # Villager attributes
         for player in self.player_list:
             role = roles.pop()  # Assign a role from the shuffled list
             player.role = role
             self.update_role_count(role, increment=True)
 
             if role == "villager":
-                player.attribute = self.assign_villager_attribute()
-        
+                if attributes:
+                    player.attribute = attributes.pop(0)  # Assign unique attribute
+                else:
+                    player.attribute = None  # No attribute left to assign
+
         # Debugging output to check balance
         print(f"Roles distribution: Mafia: {num_mafia}, Doctor: {num_doctors}, Detective: {num_detective}, Villagers: {num_villagers}")
 
