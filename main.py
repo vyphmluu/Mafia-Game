@@ -107,9 +107,9 @@ Known Faults:
 '''
 
 from tkinter import Tk, Label, Button, Entry, StringVar, messagebox, Frame, Radiobutton, IntVar
-from player import Player
 from gameClass import GameClass
 import sys
+
 
 class MafiaGameApp:
     def __init__(self, root):
@@ -129,8 +129,8 @@ class MafiaGameApp:
         self.clear_frame()
         Label(self.main_frame, text="-----Welcome to Mafia-----", font=("Arial", 16)).pack(pady=10)
         Label(self.main_frame, text="Choose a Mode:", font=("Arial", 12)).pack(pady=5)
-        Radiobutton(self.main_frame, text="Singleplayer", variable=self.gamemode, value=1).pack(anchor="w")
-        Radiobutton(self.main_frame, text="Multiplayer", variable=self.gamemode, value=2).pack(anchor="w")
+        Radiobutton(self.main_frame, text="Single player", variable=self.gamemode, value=1).pack(anchor="w")
+        Radiobutton(self.main_frame, text="Multi player", variable=self.gamemode, value=2).pack(anchor="w")
         Radiobutton(self.main_frame, text="Exit", variable=self.gamemode, value=3).pack(anchor="w")
         Button(self.main_frame, text="Proceed", command=self.handle_main_menu).pack(pady=10)
 
@@ -158,15 +158,21 @@ class MafiaGameApp:
         if not name:
             messagebox.showerror("Error", "Player name cannot be empty!")
             return
+        self.clear_frame()
+        Label(self.main_frame, text="Choose AI Difficulty", font=("Arial", 14)).pack(pady=10)
+        Button(self.main_frame, text="Easy Mode", command=lambda: self.start_game(name, 1)).pack(pady=5)
+        Button(self.main_frame, text="Normal Mode", command=lambda: self.start_game(name, 2)).pack(pady=5)
+        Button(self.main_frame, text="Hard Mode", command=lambda: self.start_game(name, 3)).pack(pady=5)
+
+    def start_game(self, name, difficulty):
         game = GameClass(10, 1)
         game.main_player(name)
         game.add_player(name)
-        # Add AI players
-        game.ai_mode()
         name_list = ["John", "Bob", "Robin", "Elizabeth", "Alice", "Danny", "Alphonso", "Sedrick", "Darius"]
         for player in name_list:
             game.add_player(player)
         game.assignRoles()
+        game.game_difficulty = difficulty
         game.start_game()
         messagebox.showinfo("Game Over", "Game has ended!")
         self.create_main_menu()
@@ -210,7 +216,7 @@ class MafiaGameApp:
         messagebox.showinfo("Game Over", "Game has ended!")
         self.create_main_menu()
 
-#Run the game application
+
 if __name__ == "__main__":
     root = Tk()
     app = MafiaGameApp(root)
