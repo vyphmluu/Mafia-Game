@@ -500,7 +500,7 @@ class MultiplayerGameClass(GameClass):
     def random_event_generator(self):
         self.clear_frame()
 
-        choice = random.randint(0,3)
+        choice = random.randint(0,5)
         if choice == 0:
             self.hurricane()
         elif choice == 1:
