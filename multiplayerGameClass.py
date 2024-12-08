@@ -307,8 +307,8 @@ class MultiplayerGameClass(GameClass):
     
         tk.Button(
             self.frame,
-            text="Proceed to Day Phase",
-            command=self.multiplayer_day_phase
+            text="Proceed to Random Event",
+            command=self.random_event_generator
         ).pack(pady=10)
 
     def start_role_call(self, game):
@@ -359,3 +359,71 @@ class MultiplayerGameClass(GameClass):
     def next_player_role(self):
         self.current_role_index += 1
         self.transition_screen()
+
+    def random_event_generator(self):
+        self.clear_frame()
+
+        choice = random.randint(0,3)
+        if choice == 0:
+            self.hurricane()
+        elif choice == 1:
+            self.tornado()
+        elif choice == 2:
+            self.village_fire()
+        elif choice == 3:
+            self.suspicious_action()
+        else:
+            tk.Label(
+                self.frame,
+                text="No Random Event Occurs Today.",
+                font=("Arial", 12),
+            ).pack(pady=10)
+
+        tk.Button(
+            self.frame,
+            text="Proceed to Day Phase",
+            command=self.multiplayer_day_phase
+        ).pack(pady=10)
+
+    def hurricane(self):
+        tk.Label(
+            self.frame,
+            text="A massive hurricane hits the village!",
+            font=("Arial", 12),
+        ).pack(pady=10)
+        self.alive_players = [p for p in self.player_list if p.status == "alive"]
+        target_player = self.alive_players[1]
+        target_player.status = "dead"
+        tk.Label(self.frame, text=f"{target_player.name.capitalize()} was killed in the hurricane!", font=("Arial", 14)).pack(pady=10)
+
+    def tornado(self):
+        tk.Label(
+            self.frame,
+            text="Look! A tornado is heading towards the village!",
+            font=("Arial", 12),
+        ).pack(pady=10)
+        self.alive_players = [p for p in self.player_list if p.status == "alive"]
+        target_player = self.alive_players[1]
+        target_player.status = "dead"
+        tk.Label(self.frame, text=f"{target_player.name.capitalize()} was killed in the tornado!", font=("Arial", 14)).pack(pady=10)
+
+    def village_fire(self):
+        tk.Label(
+            self.frame,
+            text="Oh no! A villager's house is on fire!",
+            font=("Arial", 12),
+        ).pack(pady=10)
+        self.alive_players = [p for p in self.player_list if p.status == "alive"]
+        target_player = self.alive_players[1]
+        target_player.status = "dead"
+        tk.Label(self.frame, text=f"{target_player.name.capitalize()} was killed in the fire!", font=("Arial", 14)).pack(pady=10)        
+
+    def suspicious_action(self):
+        tk.Label(
+            self.frame,
+            text="The word around the town is that someone has been doing some suspicious things.",
+            font=("Arial", 12),
+        ).pack(pady=10)
+        self.alive_players = [p for p in self.player_list if p.status == "alive"]
+        target_player = self.alive_players[1]
+        tk.Label(self.frame, text=f"{target_player.name.capitalize()} has been hiding guns and knives in his house! Do with that info as you please.", font=("Arial", 14)).pack(pady=10)        
