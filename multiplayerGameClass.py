@@ -516,6 +516,9 @@ class MultiplayerGameClass(GameClass):
                 font=("Arial", 12),
             ).pack(pady=10)
 
+        if self.check_win_conditions():
+            return
+
         tk.Button(
             self.frame,
             text="Proceed to Day Phase",
