@@ -106,6 +106,7 @@ Known Faults:
     - Input validation is minimal; role validation is not enforced strictly.  
 '''
 
+from multiplayerGameClass import MultiplayerGameClass
 from tkinter import Tk, Label, Button, Entry, StringVar, messagebox, Frame, Radiobutton, IntVar
 from gameClass import GameClass
 import sys
@@ -130,7 +131,7 @@ class MafiaGameApp:
         Label(self.main_frame, text="-----Welcome to Mafia-----", font=("Arial", 16)).pack(pady=10)
         Label(self.main_frame, text="Choose a Mode:", font=("Arial", 12)).pack(pady=5)
         Radiobutton(self.main_frame, text="Single player", variable=self.gamemode, value=1).pack(anchor="w")
-        Radiobutton(self.main_frame, text="Multi player", variable=self.gamemode, value=2).pack(anchor="w")
+        Radiobutton(self.main_frame, text="Multiplayer", variable=self.gamemode, value=2).pack(anchor="w")
         Radiobutton(self.main_frame, text="Exit", variable=self.gamemode, value=3).pack(anchor="w")
         Button(self.main_frame, text="Proceed", command=self.handle_main_menu).pack(pady=10)
 
@@ -192,7 +193,6 @@ class MafiaGameApp:
         Button(self.main_frame, text="Setup Players", command=self.setup_multiplayer).pack(pady=10)
 
     def setup_multiplayer(self):
-        """Collect player names for multiplayer mode and start the game."""
         try:
             number_of_players = int(self.num_players.get())
             if number_of_players <= 0:
@@ -204,13 +204,14 @@ class MafiaGameApp:
         self.multiplayer_names = []
         self.clear_frame()
         Label(self.main_frame, text=f"Enter names for {number_of_players} players:", font=("Arial", 14)).pack(pady=10)
+
         for i in range(number_of_players):
             Label(self.main_frame, text=f"Player {i + 1} Name:").pack(anchor="w")
             name_var = StringVar()
             Entry(self.main_frame, textvariable=name_var).pack(pady=5)
             self.multiplayer_names.append(name_var)
 
-        Button(self.main_frame, text="Start Game", command=self.start_multiplayer_game).pack(pady=10)
+        Button(self.main_frame, text="Start Game", command=lambda: self.start_multiplayer_game()).pack(pady=10)
 
     def start_multiplayer(self):
         self.game = GameClass(len(self.multiplayer_names), 2, self.main_frame, self)  # Pass self
@@ -224,14 +225,12 @@ class MafiaGameApp:
         self.game.assignRoles()
 
         # Start the role call UI
-        self.start_role_call(self.game)
+        self.role_call(self.game)
     
     def start_multiplayer_game(self):
         """Initialize the game for multiplayer and start the first phase."""
-        # Set up the GameClass instance for multiplayer
-        self.game = GameClass(len(self.multiplayer_names), 2, self.main_frame, self)
+        self.game = MultiplayerGameClass(len(self.multiplayer_names), self.main_frame, self)
 
-        # Add players from the collected names
         for name_var in self.multiplayer_names:
             name = name_var.get().lower()
             if not name:
@@ -239,62 +238,8 @@ class MafiaGameApp:
                 return
             self.game.add_player(name)
 
-        # Assign roles and start role call
         self.game.assignRoles()
-        self.start_role_call(self.game)
-    
-    def start_role_call(self, game):
-        """Begin the role call sequence with a transition screen for the first player."""
-        self.game = game
-        self.current_role_index = 0  # Start with the first player
-
-        # Show the transition screen for the first player
-        self.transition_screen()
-
-    def show_player_role(self, player):
-        """Display the current player's role."""
-        self.clear_frame()
-
-        Label(self.main_frame, text=f"{player.name.capitalize()}, it's your turn!", font=("Arial", 14)).pack(pady=10)
-        Label(self.main_frame, text=f"Your role: {player.role.capitalize()}", font=("Arial", 12)).pack(pady=10)
-
-        # Display special abilities for villagers
-        if player.role == "villager" and player.attribute:
-            Label(self.main_frame, text=f"Special ability: {player.attribute.capitalize()}", font=("Arial", 12)).pack(pady=5)
-
-        # Add a button for the next step
-        if self.current_role_index < len(self.game.player_list) - 1:
-            Button(self.main_frame, text="Next", command=self.next_player_role).pack(pady=10)
-        else:
-            Button(self.main_frame, text="Proceed to Day Phase", command=self.game.day_phase).pack(pady=10)
-
-    def transition_screen(self):
-        """Show a transition screen between players' role displays."""
-        self.clear_frame()
-
-        # Display a message for the next player
-        Label(
-            self.main_frame,
-            text=f"Next Player: {self.game.player_list[self.current_role_index].name.capitalize()}",
-            font=("Arial", 14),
-        ).pack(pady=20)
-        Label(
-            self.main_frame,
-            text="Please come to the screen. Press 'Continue' when ready.",
-            font=("Arial", 12),
-        ).pack(pady=10)
-
-        # Add a button to proceed
-        Button(
-            self.main_frame,
-            text="Continue",
-            command=lambda: self.show_player_role(self.game.player_list[self.current_role_index]),
-        ).pack(pady=10)
-        
-    def next_player_role(self):
-        self.current_role_index += 1
-        self.transition_screen()
-
+        self.game.start_role_call(self.game)  # No arguments required
 
 if __name__ == "__main__":
     root = Tk()

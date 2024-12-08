@@ -243,12 +243,14 @@ class GameClass:
 
         self.role_call()  # Perform the private role call
 
-    # UI Transition In Progress
     def role_call(self):
-        """Trigger the UI-based role call in MafiaGameApp."""
-        if self.game_mode == 2:  # Multiplayer mode
-            # Notify the app to start the role call UI
+        """Trigger the role call through the appropriate method."""
+        if hasattr(self.app, "start_role_call"):
             self.app.start_role_call(self)
+        elif hasattr(self, "start_role_call"):
+            self.start_role_call(self)
+        else:
+            raise AttributeError("Neither the app nor the current class has a start_role_call method.")
 
     def update_role_count(self, role, increment=True):
         """Update the count of each role based on the player's assigned role."""
@@ -520,19 +522,52 @@ class GameClass:
         self.check_win_conditions()
 
     def check_win_conditions(self):
+        """Checks if a win condition is met."""
         # Check if the village wins (all mafia members are eliminated)
         if self.num_mafia == 0:
-            # Set the game completion flag to true, ending the game loop
             self.gameCompleted = True
-            # Display the victory message for the village
-            print("Village Wins!")
+            self.show_winning_team_screen("Village")
+            return True  # Stop further processing
 
         # Check if the mafia wins (mafia outnumber or equal the villagers and doctors)
         elif self.num_mafia >= (self.num_villagers + self.num_doctors):
-            # Set the game completion flag to true, ending the game loop
             self.gameCompleted = True
-            # Display the victory message for the mafia
-            print("Mafia wins!")
+            self.show_winning_team_screen("Mafia")
+            return True  # Stop further processing
+
+        return False
+    
+    def show_winning_team_screen(self, winning_team):
+        """Displays the screen announcing the winning team."""
+        self.clear_frame()
+
+        # Display the winning team
+        tk.Label(
+            self.frame,
+            text=f"{winning_team} Wins!",
+            font=("Arial", 20),
+            fg="green" if winning_team == "Village" else "red"
+        ).pack(pady=20)
+
+        # Display a message with options
+        tk.Label(
+            self.frame,
+            text="Congratulations to the winning team! Would you like to play again?",
+            font=("Arial", 14)
+        ).pack(pady=10)
+
+        # Add buttons for replaying or exiting
+        tk.Button(
+            self.frame,
+            text="Play Again",
+            command=self.app.create_main_menu  # Navigate back to the main menu
+        ).pack(pady=10)
+
+        tk.Button(
+            self.frame,
+            text="Exit",
+            command=lambda: self.app.root.quit()
+        ).pack(pady=10)
 
     def clear_screen(self):
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -577,3 +612,309 @@ class GameClass:
                 history[cur_player] = day_vote
         self.mafia_votes = history
         return self.mafia_votes
+    
+    def multiplayer_day_phase(self):
+        """Handles the day phase for multiplayer mode, allowing players to vote."""
+        self.clear_frame()
+        tk.Label(self.frame, text="Day Phase: Time to vote!", font=("Arial", 14)).pack(pady=10)
+
+        # Filter alive players for the voting process
+        self.votes = {}
+        self.current_voter_index = 0
+        self.alive_players = [p for p in self.player_list if p.status == "alive"]  # Only alive players can vote
+
+        if self.alive_players:
+            self.multiplayer_next_voter()
+        else:
+            messagebox.showinfo("Error", "No players alive to vote!")
+
+    def show_multiplayer_voting_screen(self, voter):
+        """Show the voting screen for the current player in multiplayer."""
+        self.clear_frame()
+
+        # Display the voter's name and instruction
+        tk.Label(self.frame, text=f"{voter.name.capitalize()}, it's your turn to vote!", font=("Arial", 14)).pack(pady=10)
+
+        # List of alive players to vote for
+        self.vote_target = tk.StringVar()
+        alive_targets = [p for p in self.alive_players if p.name != voter.name]  # Only allow votes for other alive players
+
+        if not alive_targets:
+            tk.Label(self.frame, text="No valid targets to vote for!", font=("Arial", 12)).pack(pady=10)
+            self.current_voter_index += 1
+            self.multiplayer_next_voter()  # Move to the next voter
+            return
+
+        for player in alive_targets:
+            tk.Radiobutton(
+                self.frame,
+                text=player.name.capitalize(),
+                variable=self.vote_target,
+                value=player.name
+            ).pack(anchor="w")
+
+        # Submit vote button
+        tk.Button(
+            self.frame,
+            text="Submit Vote",
+            command=lambda: self.submit_multiplayer_vote(voter)
+        ).pack(pady=10)
+
+    def submit_multiplayer_vote(self, voter):
+        """Record the current player's vote and move to the next voter."""
+        selected_player = self.vote_target.get()
+
+        if not selected_player:
+            messagebox.showerror("Error", "You must select a player to vote!")
+            return
+
+        # Record the vote
+        self.votes[selected_player] = self.votes.get(selected_player, 0) + 1
+
+        # Move to the next voter
+        self.current_voter_index += 1
+
+        if self.current_voter_index < len(self.player_list):
+            # Show the voting screen for the next voter
+            next_voter = self.player_list[self.current_voter_index]
+            self.show_multiplayer_voting_screen(next_voter)
+        else:
+            # All votes are in, tally the votes
+            self.tally_multiplayer_votes()
+
+    def multiplayer_next_voter(self):
+        """Handles transitioning to the next voter in the multiplayer day phase."""
+        # Check if there are more voters in the queue
+        if self.current_voter_index < len(self.alive_players):
+            current_voter = self.alive_players[self.current_voter_index]
+            self.show_multiplayer_voting_screen(current_voter)
+        else:
+            # If all voters have voted, tally the votes
+            self.tally_multiplayer_votes()
+
+    def tally_multiplayer_votes(self):
+        """Tally votes and eliminate the player with the most votes."""
+        self.clear_frame()
+
+        if self.votes:
+            # Find the player(s) with the most votes
+            max_votes = max(self.votes.values())
+            candidates = [name for name, count in self.votes.items() if count == max_votes]
+
+            # Handle ties with random selection
+            eliminated_player_name = random.choice(candidates) if len(candidates) > 1 else candidates[0]
+            eliminated_player = next(p for p in self.player_list if p.name == eliminated_player_name)
+
+            # Eliminate the chosen player
+            eliminated_player.status = "dead"
+            tk.Label(self.frame, text=f"{eliminated_player.name.capitalize()} has been eliminated!", font=("Arial", 16)).pack(pady=20)
+
+            # Update role counts
+            self.update_role_count(eliminated_player.role, increment=False)
+
+            # Check win conditions before proceeding to the next phase
+            if self.check_win_conditions():
+                return  # If a win condition is met, stop further processing
+        
+        # Proceed to the next phase
+        tk.Button(
+            self.frame,
+            text="Proceed to Night Phase",
+            command=self.multiplayer_night_phase
+        ).pack(pady=10)
+
+    def multiplayer_night_phase(self):
+        """Handles the Night Phase for multiplayer mode."""
+        self.clear_frame()
+
+        # Start with the Mafia's phase
+        self.night_phase_message = tk.Label(self.frame, text="Night Phase: Everyone, close your eyes.", font=("Arial", 16))
+        self.night_phase_message.pack(pady=10)
+
+        tk.Button(
+            self.frame,
+            text="Begin Mafia Phase",
+            command=self.mafia_phase
+        ).pack(pady=10)
+
+    def mafia_phase(self):
+        """Handles the Mafia's voting phase."""
+        self.clear_frame()
+        tk.Label(self.frame, text="Mafia, open your eyes.", font=("Arial", 16)).pack(pady=10)
+        tk.Label(self.frame, text="Mafia, choose a player to eliminate.", font=("Arial", 12)).pack(pady=10)
+
+        # Create a dictionary for Mafia votes
+        self.mafia_votes = {}
+        self.current_mafia_index = 0  # Start with the first Mafia player
+        self.show_mafia_voting_screen()
+    
+    def show_mafia_voting_screen(self):
+        """Display the voting screen for the current Mafia player."""
+        mafia_player = [
+            p for p in self.player_list if p.role == "mafia" and p.status == "alive"
+        ][self.current_mafia_index]
+
+        self.clear_frame()
+        tk.Label(self.frame, text=f"{mafia_player.name.capitalize()}, it's your turn to vote!", font=("Arial", 14)).pack(pady=10)
+
+        # Voting options for Mafia
+        alive_players = [p for p in self.player_list if p.status == "alive" and p.name != mafia_player.name]
+        self.vote_target = tk.StringVar()
+
+        for player in alive_players:
+            tk.Radiobutton(
+                self.frame,
+                text=player.name.capitalize(),
+                variable=self.vote_target,
+                value=player.name
+            ).pack(anchor="w")
+
+        tk.Button(
+            self.frame,
+            text="Submit Vote",
+            command=lambda: self.submit_mafia_vote(mafia_player)
+        ).pack(pady=10)
+
+    def submit_mafia_vote(self, mafia_player):
+        """Record the Mafia player's vote and move to the next Mafia player."""
+        selected_player = self.vote_target.get()
+
+        if not selected_player:
+            messagebox.showerror("Error", "You must select a player to vote!")
+            return
+
+        # Record the vote
+        self.mafia_votes[selected_player] = self.mafia_votes.get(selected_player, 0) + 1
+
+        # Move to the next Mafia player
+        self.current_mafia_index += 1
+        mafia_players = [p for p in self.player_list if p.role == "mafia" and p.status == "alive"]
+
+        if self.current_mafia_index < len(mafia_players):
+            self.show_mafia_voting_screen()
+        else:
+            self.resolve_mafia_votes()
+
+    def resolve_mafia_votes(self):
+        """Determine and announce the Mafia's chosen target."""
+        self.clear_frame()
+        if self.mafia_votes:
+            max_votes = max(self.mafia_votes.values())
+            targets_with_max_votes = [name for name, count in self.mafia_votes.items() if count == max_votes]
+            self.mafia_target = random.choice(targets_with_max_votes)
+
+            tk.Label(
+                self.frame,
+                text=f"Mafia has chosen to target {self.mafia_target.capitalize()}.",
+                font=("Arial", 16)
+            ).pack(pady=10)
+
+        tk.Button(
+            self.frame,
+            text="Proceed to Doctor Phase",
+            command=self.doctor_phase
+        ).pack(pady=10)
+
+    def doctor_phase(self):
+        """Handles the Doctor's protection phase."""
+        self.clear_frame()
+        tk.Label(self.frame, text="Doctor, open your eyes.", font=("Arial", 16)).pack(pady=10)
+        tk.Label(self.frame, text="Doctor, choose a player to protect.", font=("Arial", 12)).pack(pady=10)
+
+        # Display Doctor voting screen
+        self.show_doctor_screen()
+
+    def show_doctor_screen(self):
+        """Display the screen for the Doctor to choose a player to protect."""
+        doctor_player = next((p for p in self.player_list if p.role == "doctor" and p.status == "alive"), None)
+
+        if not doctor_player:
+            self.proceed_to_villager_phase()
+            return
+
+        self.clear_frame()
+        tk.Label(self.frame, text=f"{doctor_player.name.capitalize()}, it's your turn to protect a player!", font=("Arial", 14)).pack(pady=10)
+
+        # List of alive players
+        self.protect_target = tk.StringVar()
+        alive_players = [p for p in self.player_list if p.status == "alive"]
+
+        for player in alive_players:
+            tk.Radiobutton(
+                self.frame,
+                text=player.name.capitalize(),
+                variable=self.protect_target,
+                value=player.name
+            ).pack(anchor="w")
+
+        tk.Button(
+            self.frame,
+            text="Submit Protection",
+            command=self.submit_doctor_protection
+        ).pack(pady=10)
+
+    def submit_doctor_protection(self):
+        """Record the Doctor's protection choice."""
+        selected_player = self.protect_target.get()
+
+        if not selected_player:
+            messagebox.showerror("Error", "You must select a player to protect!")
+            return
+
+        # Protect the selected player
+        protected_player = next(p for p in self.player_list if p.name == selected_player)
+        protected_player.protected = True
+
+        self.proceed_to_villager_phase()
+
+    def proceed_to_villager_phase(self):
+        """Proceed to the Villager Suspicion Radar phase."""
+        self.clear_frame()
+        tk.Label(self.frame, text="Villagers with Suspicion Radar, open your eyes.", font=("Arial", 16)).pack(pady=10)
+
+        for player in self.player_list:
+            if player.role == "villager" and player.status == "alive" and player.attribute == "Suspicion Radar":
+                if player.name in self.mafia_votes:
+                    tk.Label(
+                        self.frame,
+                        text=f"{player.name.capitalize()}, your Suspicion Radar detects that someone targeted you last night.",
+                        font=("Arial", 12)
+                    ).pack(pady=5)
+                else:
+                    tk.Label(
+                        self.frame,
+                        text=f"{player.name.capitalize()}, your Suspicion Radar is calm tonight.",
+                        font=("Arial", 12)
+                    ).pack(pady=5)
+
+        tk.Button(
+            self.frame,
+            text="Proceed to Day Phase",
+            command=self.resolve_night_phase
+        ).pack(pady=10)
+
+    def resolve_night_phase(self):
+        """Resolve the Night Phase actions and announce the results."""
+        self.clear_frame()
+
+        if self.mafia_target:
+            target_player = next(p for p in self.player_list if p.name == self.mafia_target)
+            if target_player.protected:
+                tk.Label(self.frame, text=f"{target_player.name.capitalize()} was protected by the Doctor and survived!", font=("Arial", 14)).pack(pady=10)
+            else:
+                target_player.status = "dead"
+                tk.Label(self.frame, text=f"{target_player.name.capitalize()} was killed during the night!", font=("Arial", 14)).pack(pady=10)
+
+        # Reset night actions
+        for player in self.player_list:
+            player.reset_night_actions()
+
+        # Check win conditions before transitioning to the next day
+        if self.check_win_conditions():
+            return  # If a win condition is met, stop further processing
+    
+        tk.Button(
+            self.frame,
+            text="Proceed to Day Phase",
+            command=self.multiplayer_day_phase
+        ).pack(pady=10)
