@@ -165,7 +165,7 @@ class MafiaGameApp:
         Button(self.main_frame, text="Hard Mode", command=lambda: self.start_game(name, 3)).pack(pady=5)
 
     def start_game(self, name, difficulty):
-        game = GameClass(10, 1)
+        game = GameClass(10, 1, self.main_frame) # Passing the main frame to gameClass.py 
         game.main_player(name)
         game.add_player(name)
         name_list = ["John", "Bob", "Robin", "Elizabeth", "Alice", "Danny", "Alphonso", "Sedrick", "Darius"]

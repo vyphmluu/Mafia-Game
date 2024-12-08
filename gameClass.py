@@ -10,9 +10,13 @@ Description:
 from player import Player
 import os
 import random
+import tkinter as tk
+from tkinter import messagebox
 
 class GameClass:
-    def __init__(self, players, game_mode):
+    def __init__(self, players, game_mode, frame):
+        self.frame = frame # Reuse root window to avoid opening new one (passed through parameter)
+
         self.num_players = players # Total number of players in the game
         self.num_mafia = 0 # Counter for mafia players
         self.num_doctors = 0 # Counter for doctor players
@@ -24,6 +28,20 @@ class GameClass:
         self.game_mode = game_mode
         self.game_difficulty = 0
         self.main_player 
+
+    def clear_frame(self):
+        """Clears current frame"""
+        for widget in self.frame.winfo_children():
+            widget.destroy()
+
+    def singleplayer_clear_frame_ui(self):
+        """After Singleplayer game begins maintains relevant info on screen but clears the rest"""
+        self.clear_frame()
+        player_role_message = f"Your Role: {self.player_list[0].role.capitalize()}"
+        self.message_label = tk.Label(self.frame, text=player_role_message)
+        self.message_label.pack()
+        return
+
 
     def easy_ai(self, cur_list):
         """Randomly selects a target from the current list."""
@@ -84,13 +102,22 @@ class GameClass:
             target = random.choice(potential_targets)
             is_correct_hint = random.random() > 0.5
             hint_role = "Mafia" if is_correct_hint and target.role == 'mafia' else "Not Mafia"
+            hint_role_text = f"Hint for {villager.name}: {target.name} might be {hint_role}."
+            hint_role_message = tk.Label(self.frame, text=hint_role_text)
+            hint_role_message.pack()
             print(f"Hint for {villager.name}: {target.name} might be {hint_role}.")
 
 
     def suspicion_radar(self, villager, mafia_votes):
         if villager.name in mafia_votes:
+            suspicion_radar_text = f"Suspicion Radar Alert: {villager.name}, the Mafia may have targeted you last night."
+            suspicion_radar_message = tk.Label(self.frame, text=suspicion_radar_text)
+            suspicion_radar_message.pack()
             print(f"Suspicion Radar Alert: {villager.name}, the Mafia may have targeted you last night.")
         else:
+            suspicion_radar_text = f"Suspicion Radar: {villager.name}, no suspicious activity detected."
+            suspicion_radar_message = tk.Label(self.frame, text=suspicion_radar_text)
+            suspicion_radar_message.pack()
             print(f"Suspicion Radar: {villager.name}, no suspicious activity detected.")
 
 
@@ -208,40 +235,51 @@ class GameClass:
                     player.attribute = None  # No attribute left to assign
 
         # Debugging output to check balance
+        self.clear_frame()
+        role_distribution_message = f"Roles Distribution: Mafia: {num_mafia}, Doctor: {num_doctors}, Detective: {num_detective}, Villagers: {num_villagers}"
+        self.message_label = tk.Label(self.frame, text=role_distribution_message)
+        self.message_label.pack()
         print(f"Roles distribution: Mafia: {num_mafia}, Doctor: {num_doctors}, Detective: {num_detective}, Villagers: {num_villagers}")
 
         self.role_call()  # Perform the private role call
 
+    # UI Transition In Progress
     def role_call(self):
         """Privately informs each player of their assigned role with double prompts for GM and player."""
         singleplayer = self.player_list[0].role.capitalize()
         if self.game_mode == 1:
+            player_role_message = f"Player, your role is: {singleplayer}"
+            self.message_label = tk.Label(self.frame, text=player_role_message)
+            self.message_label.pack()
             print(f"\nPlayer, your role is: {singleplayer}")
+            #continue_button = tk.Button(self.frame, text="Continue", command=self.singleplayer_clear_frame_ui)
+            #continue_button.pack()
             return 
 
-        print("\nRole Call: Each player will learn their role privately.")
-        input("Press Enter to begin the role call...")
+        if self.game_mode == 2:
+            print("\nRole Call: Each player will learn their role privately.")
+            input("Press Enter to begin the role call...")
 
-        for player in self.player_list:
-            if player.status == "alive":
-                # Clear the console for Game Master to call the player
-                self.clear_console()
-                print(f"{player.name.capitalize()}, please look at the screen.")
-                input("Press Enter when you are ready...")  # confirmation to call the player
+            for player in self.player_list:
+                if player.status == "alive":
+                    # Clear the console for Game Master to call the player
+                    self.clear_console()
+                    print(f"{player.name.capitalize()}, please look at the screen.")
+                    input("Press Enter when you are ready...")  # confirmation to call the player
 
-                # Clear the console for the player to see their role
-                self.clear_console()
-                print(f"{player.name.capitalize()}, it's your turn to check your role.")
-                print(f"Your role is: {player.role.capitalize()}")
+                    # Clear the console for the player to see their role
+                    self.clear_console()
+                    print(f"{player.name.capitalize()}, it's your turn to check your role.")
+                    print(f"Your role is: {player.role.capitalize()}")
 
-                # Additional information for villagers
-                if player.attribute:
-                    print(f"Your special ability is: {player.attribute.capitalize()}")
+                    # Additional information for villagers
+                    if player.attribute:
+                        print(f"Your special ability is: {player.attribute.capitalize()}")
 
-                input("Press Enter when you have seen your role.")  # Player confirms they've seen the role
+                    input("Press Enter when you have seen your role.")  # Player confirms they've seen the role
 
-            else:
-                print(f"{player.name.capitalize()} is not in the game.")  # Handle inactive players
+                else:
+                    print(f"{player.name.capitalize()} is not in the game.")  # Handle inactive players
 
         # Final screen clear after all players
         self.clear_console()
@@ -260,8 +298,77 @@ class GameClass:
             # Increment or decrement the villager count based on the increment flag
             self.num_villagers += 1 if increment else -1
 
+    def singleplayer_voting_phase(self):
+        self.singleplayer_clear_frame_ui()
+       
+        main_player = self.player_list[0]
+        alive_players = [p.name for p in self.player_list if p.status == "alive" and p.name != main_player.name]
+
+        if main_player.role == "mafia":
+            mafia_allies_text = f"Your mafia allies are: {self.mafia_ally_list(main_player.name)}"
+            mafia_allies_message = tk.Label(self.frame, text=mafia_allies_text)
+            mafia_allies_message.pack()
+        elif main_player.attribute == "Intuition":
+            self.villager_intuition(main_player)
+        elif main_player.attribute == "Suspicion Radar":
+            self.suspicion_radar(main_player, self.mafia_votes)
+
+        alive_players_text = f"Players available to vote for: ", ', '.join(alive_players)
+        alive_players_message = tk.Label(self.frame, text=alive_players_text)
+        alive_players_message.pack()
+        
+        vote_entry = tk.Entry(self.frame)
+        vote_entry.pack()
+
+        vote_for = vote_entry.get().lower()
+        if vote_for not in [p.lower() for p in alive_players]:
+            messagebox.showerror(f"Invalid choice. Please select from: {', '.join(alive_players)}")
+        else:
+            messagebox.showinfo(f"Vote submitted. You voted to eliminate {vote_for.capitalize()}.")
+
+        vote_button = tk.Button(self.frame, text="Vote", command=lambda: self.singleplayer_submit_vote(vote_for))
+        vote_button.pack()
+
+    def singleplayer_submit_vote(self, vote_for):
+        votes = {}
+        votes[vote_for] = votes.get(vote_for, 0) + 1
+        votes = self.easyAI_submit_vote(votes)
+        if votes:
+            max_votes = max(votes.values())
+            candidates = [name for name, count in votes.items() if count == max_votes]
+
+            eliminated_player = random.choice(candidates) if len(candidates) > 1 else candidates[0]
+            eliminated_player_obj = next((p for p in self.player_list if p.name.lower() == eliminated_player.lower()), None)
+
+            if eliminated_player_obj:
+                eliminated_player_obj.status = "dead"
+                eliminated_text = f"{eliminated_player_obj.name.capitalize()} has been eliminated."
+                eliminated_message = tk.Label(self.frame, text=eliminated_text)
+                eliminated_message.pack()
+                self.update_role_count(eliminated_player_obj.role, increment=False)
+        self.check_win_conditions()
+        button = tk.Button(self.frame, text="Night Phase: Everyone, close your eyes.", command=self.night_phase)
+        button.pack()
+
+    def easyAI_submit_vote(self, votes):
+        self.singleplayer_clear_frame_ui()
+        alive_players = [p.name for p in self.player_list if p.status == "alive" and p.name != self.player_list[0].name]
+        for p in alive_players:
+            vote_for = self.easy_ai(alive_players)
+            votes[vote_for] = votes.get(vote_for, 0) + 1
+            vote_text = f"{p} (AI) votes for {vote_for.capitalize()}."
+            vote_message = tk.Label(self.frame, text=vote_text)
+            vote_message.pack()
+        return votes
+
+
+
     def day_phase(self):
         """Handles the day phase, allowing players to vote while displaying private role-specific information."""
+        day_phase_message = tk.Label(self.frame, text="Day Phase: Time to vote!")
+        day_phase_message.pack()
+        continue_button = tk.Button(self.frame, text="Enter Day Phase", command=self.singleplayer_voting_phase)
+        continue_button.pack()
         print("Day Phase: Time to vote!")
         input("Press Enter to begin the day phase...")
         self.clear_console()
@@ -272,13 +379,15 @@ class GameClass:
         # Call each player for their turn
         for player in self.player_list:
             if player.status == "alive":
-                # Clear the console for privacy
-                self.clear_console()
-                print(f"{player.name.capitalize()}, please come to the screen.")
-                input("Press Enter when the player is ready...")
+                if self.game_mode == 2 or (self.game_mode == 1 and player.name == self.player_list[0].name):
+                    # Clear the console for privacy
+                    self.clear_console()
+                    if self.game_mode == 2:
+                        print(f"{player.name.capitalize()}, please come to the screen.")
+                        input("Press Enter when the player is ready...")
 
-                # Clear again for the player to view their private information
-                self.clear_console()
+                        # Clear again for the player to view their private information
+                        self.clear_console()
 
                 # Display private information based on role or attributes
                 if player.role == "mafia":
@@ -294,6 +403,9 @@ class GameClass:
 
                 # Voting process
                 if self.game_mode == 2 or (self.game_mode == 1 and player.name == self.main_player):
+                    vote_entry = tk.Entry(self.frame)
+                    vote_entry.pack()
+
                     vote_for = input(f"{player.name}, who do you vote to eliminate? ").lower()
                     while vote_for not in [p.lower() for p in alive_players]:
                         print(f"Invalid choice. Please select from: {', '.join(alive_players)}")
@@ -332,21 +444,46 @@ class GameClass:
 
 
     def night_phase(self):
+        self.singleplayer_clear_frame_ui()
+        alive_players = [p.name for p in self.player_list if p.status == "alive" and p.name != self.player_list[0].name]
+        night_phase_message = tk.Label(self.frame, text="Night Phase!")
+        night_phase_message.pack()
         print("Night Phase: Everyone, close your eyes.")
-        input("Press any key to continue...")
+        #input("Press any key to continue...")
         self.clear_console()
 
         # Mafia Voting Phase
+        mafia_awake_message = tk.Label(self.frame, text="Mafia, open your eyes.\n Choose a player to eliminate.")
+        mafia_awake_message.pack()
         print("Mafia, open your eyes.")
         print("Mafia, choose a player to eliminate.")
+        player_list_text = f"Players: {alive_players}"
+        player_list_message = tk.Label(self.frame, text=player_list_text)
+        player_list_message.pack()
         
         mafia_votes = {}  # Dictionary to store votes for each target
         for player in self.player_list:
             if player.role == "mafia" and player.status == "alive":
+                mafia_votes_text = f"Mafia votes: {self.mafia_votes}"
+                mafia_votes_message = tk.Label(self.frame, text=mafia_votes_text)
+                mafia_votes_message.pack()
                 print(f"Mafia votes: {self.mafia_votes}")
+                mafia_allies_text = f"Mafia Allies: {self.mafia_ally_list(player.name)}"
+                mafia_allies_message = tk.Label(self.frame, text=mafia_allies_text)
+                mafia_allies_message.pack()
                 print(f"Mafia Allies: {self.mafia_ally_list(player.name)}")
-                target_name = input(f"{player.name.capitalize()} (Mafia), choose your target: ").lower()
-                target_player = next((p for p in self.player_list if p.name == target_name and p.status == "alive"), None)
+                target_name_entry = tk.Entry(self.frame)
+                target_name_entry.pack()
+                #target_name = input(f"{player.name.capitalize()} (Mafia), choose your target: ").lower()
+                """NEEDS A BUTTON for input"""
+                mafia_vote_button = tk.Button(self.frame, text="Vote", command=self.singleplayer_clear_frame_ui)
+                mafia_vote_button.pack()
+
+                if target_name_entry:
+                    target_player = next((p for p in self.player_list if p.name == target_name_entry and p.status == "alive"), None)
+                if target_name:
+                    target_player = next((p for p in self.player_list if p.name == target_name and p.status == "alive"), None)
+                
                 if target_player:
                     player.mafia_action(target_player)  # Mafia player uses mafia_action method
                     mafia_votes[target_player] = mafia_votes.get(target_player, 0) + 1
@@ -358,6 +495,9 @@ class GameClass:
             max_votes = max(mafia_votes.values())
             targets_with_max_votes = [p for p, votes in mafia_votes.items() if votes == max_votes]
             target = random.choice(targets_with_max_votes) if len(targets_with_max_votes) > 1 else targets_with_max_votes[0]
+            target_announcement_text = f"Mafia has chosen to target {target.name}."
+            target_announcement_message = tk.Label(self.frame, text=target_announcement_text)
+            target_announcement_message.pack()
             print(f"Mafia has chosen to target {target.name}.")  # Announce chosen target
 
         # Close Mafia phase
