@@ -429,7 +429,7 @@ class GameClass:
         
         mafia_votes = {}  # Dictionary to store votes for each target
         for player in self.player_list:
-            if player.role == "mafia" and player.status == "alive":
+            if (player.role == "mafia" and player.status == "alive" and self.game_mode == 2) or (player.name == self.player_list[0].name):
                 mafia_votes_text = f"Mafia votes: {self.mafia_votes}"
                 mafia_votes_message = tk.Label(self.frame, text=mafia_votes_text)
                 mafia_votes_message.pack()
@@ -442,50 +442,60 @@ class GameClass:
                 target_name_entry.pack()
                 #target_name = input(f"{player.name.capitalize()} (Mafia), choose your target: ").lower()
                 """NEEDS A BUTTON for input"""
-                mafia_vote_button = tk.Button(self.frame, text="Vote", command=self.singleplayer_clear_frame_ui)
-                mafia_vote_button.pack()
 
                 if target_name_entry:
                     target_player = next((p for p in self.player_list if p.name == target_name_entry and p.status == "alive"), None)
-                if target_name:
-                    target_player = next((p for p in self.player_list if p.name == target_name and p.status == "alive"), None)
+                #if target_name:
+                    #target_player = next((p for p in self.player_list if p.name == target_name and p.status == "alive"), None)
                 
                 if target_player:
                     player.mafia_action(target_player)  # Mafia player uses mafia_action method
                     mafia_votes[target_player] = mafia_votes.get(target_player, 0) + 1
+                mafia_vote_button = tk.Button(self.frame, text="Vote", command=lambda: final_mafia_vote(mafia_votes))
+                mafia_vote_button.pack()
                 self.clear_console()
 
         # Determine final target with most votes
-        target = None
-        if mafia_votes:
-            max_votes = max(mafia_votes.values())
-            targets_with_max_votes = [p for p, votes in mafia_votes.items() if votes == max_votes]
-            target = random.choice(targets_with_max_votes) if len(targets_with_max_votes) > 1 else targets_with_max_votes[0]
-            target_announcement_text = f"Mafia has chosen to target {target.name}."
-            target_announcement_message = tk.Label(self.frame, text=target_announcement_text)
-            target_announcement_message.pack()
-            print(f"Mafia has chosen to target {target.name}.")  # Announce chosen target
+        def final_mafia_vote(mafia_votes):
+            self.singleplayer_clear_frame_ui()
+            target = None
+            if mafia_votes:
+                max_votes = max(mafia_votes.values())
+                targets_with_max_votes = [p for p, votes in mafia_votes.items() if votes == max_votes]
+                target = random.choice(targets_with_max_votes) if len(targets_with_max_votes) > 1 else targets_with_max_votes[0]
+                target_announcement_text = f"Mafia has chosen to target {target.name}."
+                target_announcement_message = tk.Label(self.frame, text=target_announcement_text)
+                target_announcement_message.pack()
+                print(f"Mafia has chosen to target {target.name}.")  # Announce chosen target
 
         # Close Mafia phase
         print("Mafia, close your eyes.")
-        input("Press any key to continue...")
+        #input("Press any key to continue...")
         self.clear_console()
 
         # Doctor Voting Phase
         print("Doctor, open your eyes.")
         print("Doctor, choose a player to protect.")
+        doctor_vote_message = tk.Label(self.frame, text="Doctor, open your eyes.\nDoctor, choose a player to protect.")
+        doctor_vote_message.pack()
 
         for player in self.player_list:
             if player.role == "doctor" and player.status == "alive":
                 target_name = input(f"{player.name} (Doctor), choose a player to protect: ").lower()
                 target_player = next((p for p in self.player_list if p.name == target_name and p.status == "alive"), None)
+
+                target_name_entry = tk.Entry(self.frame)
+                target_name_entry.pack()
+                button = tk.Button(self.frame, text="Vote", command=self.singleplayer_clear_frame_ui)
+                
+
                 if target_player:
                     player.doctor_action(target_player)  # Doctor uses doctor_action method
                 self.clear_console()
 
         # Close Doctor phase
         print("Doctor, close your eyes.")
-        input("Press any key to continue...")
+        #input("Press any key to continue...")
         self.clear_console()
 
         # Villager Suspicion Radar Phase

@@ -109,6 +109,7 @@ Known Faults:
 from multiplayerGameClass import MultiplayerGameClass
 from tkinter import Tk, Label, Button, Entry, StringVar, messagebox, Frame, Radiobutton, IntVar
 from gameClass import GameClass
+from singlePlayer_gameClass import SinglePlayerMode
 import sys
 
 
@@ -168,7 +169,7 @@ class MafiaGameApp:
 
     def start_game(self, name, difficulty):
         """Initialize the game and start the first phase."""
-        self.game = GameClass(10, 1, self.main_frame, self)  # Pass `self` as the `app` parameter
+        self.game = SinglePlayerMode(10, 1, self.main_frame, self)  # Pass `self` as the `app` parameter
         self.game.main_player(name)
         self.game.add_player(name)
 
