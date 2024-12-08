@@ -14,9 +14,9 @@ import tkinter as tk
 from tkinter import messagebox
 
 class GameClass:
-    def __init__(self, players, game_mode, frame):
+    def __init__(self, players, game_mode, frame, app):
         self.frame = frame # Reuse root window to avoid opening new one (passed through parameter)
-
+        self.app = app # Store the reference to MafiaGameApp
         self.num_players = players # Total number of players in the game
         self.num_mafia = 0 # Counter for mafia players
         self.num_doctors = 0 # Counter for doctor players
@@ -245,46 +245,10 @@ class GameClass:
 
     # UI Transition In Progress
     def role_call(self):
-        """Privately informs each player of their assigned role with double prompts for GM and player."""
-        singleplayer = self.player_list[0].role.capitalize()
-        if self.game_mode == 1:
-            player_role_message = f"Player, your role is: {singleplayer}"
-            self.message_label = tk.Label(self.frame, text=player_role_message)
-            self.message_label.pack()
-            print(f"\nPlayer, your role is: {singleplayer}")
-            #continue_button = tk.Button(self.frame, text="Continue", command=self.singleplayer_clear_frame_ui)
-            #continue_button.pack()
-            return 
-
-        if self.game_mode == 2:
-            print("\nRole Call: Each player will learn their role privately.")
-            input("Press Enter to begin the role call...")
-
-            for player in self.player_list:
-                if player.status == "alive":
-                    # Clear the console for Game Master to call the player
-                    self.clear_console()
-                    print(f"{player.name.capitalize()}, please look at the screen.")
-                    input("Press Enter when you are ready...")  # confirmation to call the player
-
-                    # Clear the console for the player to see their role
-                    self.clear_console()
-                    print(f"{player.name.capitalize()}, it's your turn to check your role.")
-                    print(f"Your role is: {player.role.capitalize()}")
-
-                    # Additional information for villagers
-                    if player.attribute:
-                        print(f"Your special ability is: {player.attribute.capitalize()}")
-
-                    input("Press Enter when you have seen your role.")  # Player confirms they've seen the role
-
-                else:
-                    print(f"{player.name.capitalize()} is not in the game.")  # Handle inactive players
-
-        # Final screen clear after all players
-        self.clear_console()
-        print("Role Call is complete. All players now know their roles.")
-        input("Press Enter to begin the game.")
+        """Trigger the UI-based role call in MafiaGameApp."""
+        if self.game_mode == 2:  # Multiplayer mode
+            # Notify the app to start the role call UI
+            self.app.start_role_call(self)
 
     def update_role_count(self, role, increment=True):
         """Update the count of each role based on the player's assigned role."""
