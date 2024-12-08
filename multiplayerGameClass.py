@@ -203,8 +203,8 @@ class MultiplayerGameClass(GameClass):
 
         tk.Button(
             self.frame,
-            text="Proceed to Doctor Phase",
-            command=self.doctor_phase
+            text="Proceed to Detective Phase",
+            command=self.detective_phase  # Transition to the Detective Phase
         ).pack(pady=10)
 
     def doctor_phase(self):
@@ -360,6 +360,143 @@ class MultiplayerGameClass(GameClass):
         self.current_role_index += 1
         self.transition_screen()
 
+    def detective_phase(self):
+        """Handles the Detective's investigation phase."""
+        self.clear_frame()
+
+        # Identify the detective
+        detective = next((p for p in self.player_list if p.role == "detective" and p.status == "alive"), None)
+
+        if not detective:
+            # No active detective, proceed to the Doctor Phase
+            self.proceed_to_doctor_phase()
+            return
+
+        # UI for the detective's turn
+        tk.Label(self.frame, text=f"{detective.name.capitalize()}, it's your turn to investigate!", font=("Arial", 14)).pack(pady=10)
+        tk.Label(self.frame, text="Select a player to investigate:", font=("Arial", 12)).pack(pady=10)
+
+        # List of alive players to investigate
+        self.investigation_target = tk.StringVar()
+        alive_players = [p for p in self.player_list if p.status == "alive" and p.name != detective.name]
+
+        for player in alive_players:
+            tk.Radiobutton(
+                self.frame,
+                text=player.name.capitalize(),
+                variable=self.investigation_target,
+                value=player.name
+            ).pack(anchor="w")
+
+        # Button to submit investigation
+        tk.Button(
+            self.frame,
+            text="Investigate",
+            command=lambda: self.show_investigation_result(detective)
+        ).pack(pady=10)
+
+    def show_detective_screen(self):
+        """Display the screen for the Detective to choose a player to investigate."""
+        detective_player = next((p for p in self.player_list if p.role == "detective" and p.status == "alive"), None)
+
+        if not detective_player:
+            self.proceed_to_doctor_phase()  # Skip this phase if no detective is alive
+            return
+
+        self.clear_frame()
+        tk.Label(self.frame, text=f"{detective_player.name.capitalize()}, it's your turn to investigate a player!", font=("Arial", 14)).pack(pady=10)
+
+        # List of alive players to investigate
+        self.investigate_target = tk.StringVar(value="")  # No default selection
+        alive_players = [p for p in self.player_list if p.status == "alive" and p.name != detective_player.name]
+
+        for player in alive_players:
+            tk.Radiobutton(
+                self.frame,
+                text=player.name.capitalize(),
+                variable=self.investigate_target,
+                value=player.name
+            ).pack(anchor="w")
+
+        # Submit investigation button
+        tk.Button(
+            self.frame,
+            text="Submit Investigation",
+            command=self.submit_detective_investigation
+        ).pack(pady=10)
+
+    def submit_detective_investigation(self):
+        """Record the Detective's investigation and reveal the result."""
+        selected_player_name = self.investigate_target.get()
+
+        if not selected_player_name:
+            messagebox.showerror("Error", "You must select a player to investigate!")
+            return
+
+        # Reveal the investigated player's role
+        investigated_player = next((p for p in self.player_list if p.name == selected_player_name), None)
+
+        if investigated_player:
+            role_message = f"{investigated_player.name.capitalize()} is a {investigated_player.role.capitalize()}."
+            messagebox.showinfo("Investigation Result", role_message)
+
+        # Proceed to the next phase (e.g., Doctor Phase)
+        self.proceed_to_doctor_phase()
+
+    def show_investigation_result(self, detective):
+        """Show the result of the detective's investigation on the main app screen."""
+        target_name = self.investigation_target.get()
+
+        if not target_name:
+            messagebox.showerror("Error", "You must select a player to investigate!")
+            return
+
+        # Find the target player
+        target_player = next(p for p in self.player_list if p.name == target_name)
+
+        # Clear the current screen
+        self.clear_frame()
+
+        # Display the investigation result
+        tk.Label(
+            self.frame,
+            text=f"Investigation Result",
+            font=("Arial", 16)
+        ).pack(pady=10)
+
+        tk.Label(
+            self.frame,
+            text=f"{target_player.name.capitalize()} is a {target_player.role.capitalize()}!",
+            font=("Arial", 14)
+        ).pack(pady=20)
+
+        # Add a continue button to proceed to the next phase
+        tk.Button(
+            self.frame,
+            text="Continue",
+            command=self.check_for_doctor_phase
+        ).pack(pady=10)
+
+    def check_for_doctor_phase(self):
+        """Check if a doctor is alive before proceeding to the Doctor Phase."""
+        if not any(player.role == "doctor" and player.status == "alive" for player in self.player_list):
+            # Skip to Villager Phase if no doctors are alive
+            self.proceed_to_villager_phase()
+        else:
+            # Proceed with the Doctor Phase
+            self.doctor_phase()
+
+    def proceed_to_doctor_phase(self):
+        """Proceeds to the Doctor's phase after the Detective's actions."""
+        self.clear_frame()
+        tk.Label(self.frame, text="Proceeding to the Doctor Phase.", font=("Arial", 14)).pack(pady=10)
+
+        tk.Button(
+            self.frame,
+            text="Continue",
+            command=self.doctor_phase
+        ).pack(pady=10)
+
     def random_event_generator(self):
         self.clear_frame()
 
@@ -426,4 +563,4 @@ class MultiplayerGameClass(GameClass):
         ).pack(pady=10)
         self.alive_players = [p for p in self.player_list if p.status == "alive"]
         target_player = self.alive_players[1]
-        tk.Label(self.frame, text=f"{target_player.name.capitalize()} has been hiding guns and knives in his house! Do with that info as you please.", font=("Arial", 14)).pack(pady=10)        
+        tk.Label(self.frame, text=f"{target_player.name.capitalize()} has been hiding guns and knives in his house! Do with that info as you please.", font=("Arial", 14)).pack(pady=10)
