@@ -12,7 +12,6 @@ import os
 import sys
 import random
 import tkinter as tk
-from tkinter import messagebox
 
 class SinglePlayerMode:
     def __init__(self, players, game_mode, frame, app):
@@ -277,6 +276,7 @@ class SinglePlayerMode:
         elif main_player.attribute == "Suspicion Radar":
             self.suspicion_radar(main_player, self.mafia_votes)
 
+
         alive_players_text = f"Players available to vote for: ", ', '.join(alive_players)
         alive_players_message = tk.Label(self.frame, text=alive_players_text)
         alive_players_message.pack()
@@ -285,10 +285,10 @@ class SinglePlayerMode:
         vote_entry.pack()
 
         vote_for = vote_entry.get().lower()
-        if vote_for not in [p.lower() for p in alive_players]:
-            messagebox.showerror(f"Invalid choice. Please select from: {', '.join(alive_players)}")
-        else:
-            messagebox.showinfo(f"Vote submitted. You voted to eliminate {vote_for.capitalize()}.")
+        #if vote_for not in [p.lower() for p in alive_players]:
+            #messagebox.showerror(f"Invalid choice. Please select from: {', '.join(alive_players)}")
+        #else:
+            #messagebox.showinfo(f"Vote submitted. You voted to eliminate {vote_for.capitalize()}.")
 
         vote_button = tk.Button(self.frame, text="Vote", command=lambda: self.singleplayer_submit_vote(vote_for))
         vote_button.pack()
@@ -313,7 +313,6 @@ class SinglePlayerMode:
         self.check_win_conditions("day")
         #button = tk.Button(self.frame, text="Night Phase: Everyone, close your eyes.", command=self.check_win_conditions("day"))
         #button.pack()
-        self.check_win_conditions("day")
 
     def easyAI_submit_vote(self, votes):
         self.singleplayer_clear_frame_ui()
@@ -335,7 +334,7 @@ class SinglePlayerMode:
         continue_button = tk.Button(self.frame, text="Enter Day Phase", command=self.singleplayer_voting_phase)
         continue_button.pack()
         print("Day Phase: Time to vote!")
-
+        """
         # Dictionary to store votes
         votes = {}
 
@@ -366,8 +365,8 @@ class SinglePlayerMode:
                     vote_entry = tk.Entry(self.frame)
                     vote_entry.pack()
 
-                    while vote_for not in [p.lower() for p in alive_players]:
-                        print(f"Invalid choice. Please select from: {', '.join(alive_players)}")
+                    #while vote_for not in [p.lower() for p in alive_players]:
+                        #print(f"Invalid choice. Please select from: {', '.join(alive_players)}")
 
                     # Record the vote
                     votes[vote_for] = votes.get(vote_for, 0) + 1
@@ -379,6 +378,7 @@ class SinglePlayerMode:
                 # Clear the console before transitioning to the next player
             else:
                 print(f"{player.name.capitalize()} is not in the game.")
+        
 
         # Determine the player with the most votes
         if votes:
@@ -397,6 +397,7 @@ class SinglePlayerMode:
 
         # Check win conditions after the voting phase
         self.check_win_conditions("day")
+        """
 
     """ =============================================================== NIGHT PHASE CODE ======================================================================= """
 
@@ -433,6 +434,9 @@ class SinglePlayerMode:
             button.pack()
         elif self.player_list[0].role == "villager":
             button = tk.Button(self.frame, text="Close your eyes...", command=lambda: self.night_phase_villager(alive_players, mafia_votes, target))
+            button.pack()
+        else:
+            button = tk.Button(self.frame, text="Close your eyes...", command=lambda: self.night_phase_detective(alive_players, target))
             button.pack()
 
     def night_phase_mafia(self, alive_players, target):
@@ -498,6 +502,11 @@ class SinglePlayerMode:
         print("Doctor, choose a player to protect.")
         doctor_vote_message = tk.Label(self.frame, text="Doctor, open your eyes.\nDoctor, choose a player to protect.")
         doctor_vote_message.pack()
+        doctors_list = [p for p in alive_players]
+        doctor_list_text = f"Players Alive: {doctors_list}"
+        doctor_list_message = tk.Label(self.frame, text=doctor_list_text)
+        doctor_list_message.pack()
+
 
         for player in self.player_list:
             if player.role == "doctor" and player.status == "alive":
@@ -528,21 +537,30 @@ class SinglePlayerMode:
         message.pack()
 
         for player in self.player_list:
-            if player.role == "villager" and player.status == "alive" and player.attribute == "Suspicion Radar":
+            print(player.name, self.player_list[0].name)
+            if player.role == "villager" and player.status == "alive" and player.attribute == "Suspicion Radar" and player.name == self.player_list[0].name:
                 if player.name in mafia_votes:
-                    print(f"{player.name}, your Suspicion Radar detects that someone voted for you last night.")
-                    detect_text = f"{player.name}, your Suspicion Radar detects that someone voted for you last night."
+                    print(f"{self.main_player.name}, your Suspicion Radar detects that someone voted for you last night.")
+                    detect_text = f"{self.main_player.name}, your Suspicion Radar detects that someone voted for you last night."
                     detect_message = tk.Label(self.frame, text=detect_text)
                     detect_message.pack()
                 else:
-                    print(f"{player.name}, your Suspicion Radar is calm tonight.")
-                    detect_text = f"{player.name}, your Suspicion Radar is calm tonight."
+                    print(f"{self.main_player.name}, your Suspicion Radar is calm tonight.")
+                    detect_text = f"{self.main_player.name}, your Suspicion Radar is calm tonight."
                     detect_message = tk.Label(self.frame, text=detect_text)
                     detect_message.pack()
         button = tk.Button(self.frame, text="Villager, close your eyes...", command=lambda: self.conclude_night_phase(target))
         button.pack()
 
         print("Villagers, close your eyes.")
+
+    def night_phase_detective(self, alive_players, target):
+        self.singleplayer_clear_frame_ui()
+        button = tk.Button(self.frame, text="Sleep through the night...", command=lambda: self.conclude_night_phase(target))
+        button.pack()
+        
+        
+        
 
     def conclude_night_phase(self, target):
         self.singleplayer_clear_frame_ui()
@@ -553,6 +571,7 @@ class SinglePlayerMode:
         print("The day begins...")
 
         # Resolve night actions based on Mafia target and Doctor protection
+        print(f"Target passed to conclude_night_phase: {target}")
         if target and not target.protected:
             target.status = "dead"  # Mark as dead if unprotected
             rip_text = f"{target.name} was killed during the night."
@@ -569,8 +588,10 @@ class SinglePlayerMode:
         for player in self.player_list:
             player.reset_night_actions()
 
-        # Check win conditions
         self.check_win_conditions("night")
+
+    """ =================================================================================================================================== """
+
 
     def check_win_conditions(self, signal):
         self.singleplayer_clear_frame_ui()
@@ -593,6 +614,7 @@ class SinglePlayerMode:
             mafia_win_message.pack()
             print("Mafia wins!")
             signal = "gameover"
+
         if signal == "day":
             #button = tk.Button(self.frame, text="Continue", command=self.night_phase)
             #button.pack()
