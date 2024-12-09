@@ -129,10 +129,21 @@ class MultiplayerGameClass(GameClass):
     
     def show_mafia_voting_screen(self):
         """Display the voting screen for the current Mafia player."""
-        # Get the current mafia player
         mafia_players = [p for p in self.player_list if p.role == "mafia" and p.status == "alive"]
-        mafia_player = mafia_players[self.current_mafia_index]
+        
+        # Check if there are Mafia players left to act
+        if not mafia_players:
+            messagebox.showinfo("Game Info", "No Mafia members are alive to act.")
+            self.resolve_mafia_votes()  # Optionally resolve Mafia votes or move to the next phase
+            return
+        
+        # Ensure current_mafia_index is within bounds
+        if self.current_mafia_index >= len(mafia_players):
+            messagebox.showinfo("Game Info", "No more Mafia members left to vote.")
+            self.resolve_mafia_votes()  # Resolve votes or adjust game flow as needed
+            return
 
+        mafia_player = mafia_players[self.current_mafia_index]
         self.clear_frame()
 
         # Display the current mafia player's name and instruction
@@ -166,6 +177,7 @@ class MultiplayerGameClass(GameClass):
             text="Submit Vote",
             command=lambda: self.submit_mafia_vote(mafia_player)
         ).pack(pady=10)
+
 
     def submit_mafia_vote(self, mafia_player):
         """Record the Mafia player's vote and move to the next Mafia player."""
@@ -499,8 +511,7 @@ class MultiplayerGameClass(GameClass):
 
     def random_event_generator(self):
         self.clear_frame()
-
-        choice = random.randint(0,5)
+        choice = random.randint(0, 5)
         if choice == 0:
             self.hurricane()
         elif choice == 1:
@@ -526,44 +537,36 @@ class MultiplayerGameClass(GameClass):
         ).pack(pady=10)
 
     def hurricane(self):
-        tk.Label(
-            self.frame,
-            text="A massive hurricane hits the village!",
-            font=("Arial", 12),
-        ).pack(pady=10)
-        self.alive_players = [p for p in self.player_list if p.status == "alive"]
-        target_player = self.alive_players[1]
-        target_player.status = "dead"
-        tk.Label(self.frame, text=f"{target_player.name.capitalize()} was killed in the hurricane!", font=("Arial", 14)).pack(pady=10)
+        message = "A massive hurricane hits the village!"
+        self.process_disaster(message, "was killed in the hurricane!")
 
     def tornado(self):
-        tk.Label(
-            self.frame,
-            text="Look! A tornado is heading towards the village!",
-            font=("Arial", 12),
-        ).pack(pady=10)
-        self.alive_players = [p for p in self.player_list if p.status == "alive"]
-        target_player = self.alive_players[1]
-        target_player.status = "dead"
-        tk.Label(self.frame, text=f"{target_player.name.capitalize()} was killed in the tornado!", font=("Arial", 14)).pack(pady=10)
+        message = "Look! A tornado is heading towards the village!"
+        self.process_disaster(message, "was killed in the tornado!")
 
     def village_fire(self):
-        tk.Label(
-            self.frame,
-            text="Oh no! A villager's house is on fire!",
-            font=("Arial", 12),
-        ).pack(pady=10)
-        self.alive_players = [p for p in self.player_list if p.status == "alive"]
-        target_player = self.alive_players[1]
-        target_player.status = "dead"
-        tk.Label(self.frame, text=f"{target_player.name.capitalize()} was killed in the fire!", font=("Arial", 14)).pack(pady=10)        
+        message = "Oh no! A villager's house is on fire!"
+        self.process_disaster(message, "was killed in the fire!")
 
     def suspicious_action(self):
-        tk.Label(
-            self.frame,
-            text="The word around the town is that someone has been doing some suspicious things.",
-            font=("Arial", 12),
-        ).pack(pady=10)
+        message = "The word around the town is that someone has been doing some suspicious things."
+        if len(self.alive_players) > 1:
+            target_player = self.alive_players[1]
+            action_message = f"{target_player.name.capitalize()} has been hiding guns and knives in his house! Do with that info as you please."
+        else:
+            action_message = "Not enough players alive for any suspicious action to be noteworthy."
+        self.display_event_message(message, action_message)
+
+    def process_disaster(self, event_message, outcome_message):
+        tk.Label(self.frame, text=event_message, font=("Arial", 12)).pack(pady=10)
         self.alive_players = [p for p in self.player_list if p.status == "alive"]
-        target_player = self.alive_players[1]
-        tk.Label(self.frame, text=f"{target_player.name.capitalize()} has been hiding guns and knives in his house! Do with that info as you please.", font=("Arial", 14)).pack(pady=10)
+        if len(self.alive_players) > 1:
+            target_player = self.alive_players[1]
+            target_player.status = "dead"
+            tk.Label(self.frame, text=f"{target_player.name.capitalize()} {outcome_message}", font=("Arial", 14)).pack(pady=10)
+        else:
+            tk.Label(self.frame, text="Not enough players alive to proceed with this event.", font=("Arial", 14)).pack(pady=10)
+
+    def display_event_message(self, main_message, secondary_message):
+        tk.Label(self.frame, text=main_message, font=("Arial", 12)).pack(pady=10)
+        tk.Label(self.frame, text=secondary_message, font=("Arial, 14")).pack(pady=10)
