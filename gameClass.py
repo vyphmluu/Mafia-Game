@@ -533,6 +533,11 @@ class GameClass:
 
     def check_win_conditions(self):
         """Checks if a win condition is met."""
+        # Update counts 
+        self.num_mafia = len([p for p in self.player_list if p.role == 'mafia' and p.status == 'alive'])
+        self.num_villagers = len([p for p in self.player_list if p.role == 'villager' and p.status == 'alive'])
+        self.num_doctors = len([p for p in self.player_list if p.role == 'doctor' and p.status == 'alive'])
+
         # Check if the village wins (all mafia members are eliminated)
         if self.num_mafia == 0:
             self.gameCompleted = True
@@ -546,6 +551,7 @@ class GameClass:
             return True  # Stop further processing
 
         return False
+
     
     def show_winning_team_screen(self, winning_team):
         """Displays the screen announcing the winning team."""
