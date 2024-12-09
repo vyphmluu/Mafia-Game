@@ -511,7 +511,8 @@ class MultiplayerGameClass(GameClass):
 
     def random_event_generator(self):
         self.clear_frame()
-        choice = random.randint(0, 5)
+
+        choice = random.randint(0,5)
         if choice == 0:
             self.hurricane()
         elif choice == 1:
@@ -535,38 +536,58 @@ class MultiplayerGameClass(GameClass):
             text="Proceed to Day Phase",
             command=self.multiplayer_day_phase
         ).pack(pady=10)
-
+   
     def hurricane(self):
-        message = "A massive hurricane hits the village!"
-        self.process_disaster(message, "was killed in the hurricane!")
+        tk.Label(
+            self.frame,
+            text="A massive hurricane hits the village!",
+            font=("Arial", 12),
+        ).pack(pady=10)
+        self.alive_players = [p for p in self.player_list if p.status == "alive"]
+        target_player = self.alive_players[1]
+        target_player.status = "dead"
+        tk.Label(self.frame, text=f"{target_player.name.capitalize()} was killed in the hurricane!", font=("Arial", 14)).pack(pady=10)
 
     def tornado(self):
-        message = "Look! A tornado is heading towards the village!"
-        self.process_disaster(message, "was killed in the tornado!")
+        tk.Label(
+            self.frame,
+            text="Look! A tornado is heading towards the village!",
+            font=("Arial", 12),
+        ).pack(pady=10)
+        self.alive_players = [p for p in self.player_list if p.status == "alive"]
+        target_player = self.alive_players[1]
+        target_player.status = "dead"
+        tk.Label(self.frame, text=f"{target_player.name.capitalize()} was killed in the tornado!", font=("Arial", 14)).pack(pady=10)
 
     def village_fire(self):
-        message = "Oh no! A villager's house is on fire!"
-        self.process_disaster(message, "was killed in the fire!")
+        tk.Label(
+            self.frame,
+            text="Oh no! A villager's house is on fire!",
+            font=("Arial", 12),
+        ).pack(pady=10)
+        
+        # Refresh the list of alive players to ensure it's up to date
+        self.alive_players = [p for p in self.player_list if p.status == "alive"]
+        
+        # Ensure there are at least two alive players before accessing the second one
+        if len(self.alive_players) > 1:
+            target_player = self.alive_players[1]  # Assuming we want to affect the second player in the list
+            target_player.status = "dead"
+            tk.Label(self.frame, text=f"{target_player.name.capitalize()} was killed in the fire!", font=("Arial", 14)).pack(pady=10)
+        else:
+            # Handle the scenario where fewer than two players are alive
+            tk.Label(self.frame, text="Not enough players alive to spread the fire.", font=("Arial", 14)).pack(pady=10)
 
     def suspicious_action(self):
-        message = "The word around the town is that someone has been doing some suspicious things."
+        tk.Label(
+            self.frame,
+            text="The word around the town is that someone has been doing some suspicious things.",
+            font=("Arial", 12),
+        ).pack(pady=10)
+        
+        # Ensure there are at least two alive players before accessing them
         if len(self.alive_players) > 1:
-            target_player = self.alive_players[1]
-            action_message = f"{target_player.name.capitalize()} has been hiding guns and knives in his house! Do with that info as you please."
+            target_player = self.alive_players[1]  # Target the second alive player in the list
+            tk.Label(self.frame, text=f"{target_player.name.capitalize()} has been hiding guns and knives in his house! Do with that info as you please.", font=("Arial", 14)).pack(pady=10)
         else:
-            action_message = "Not enough players alive for any suspicious action to be noteworthy."
-        self.display_event_message(message, action_message)
-
-    def process_disaster(self, event_message, outcome_message):
-        tk.Label(self.frame, text=event_message, font=("Arial", 12)).pack(pady=10)
-        self.alive_players = [p for p in self.player_list if p.status == "alive"]
-        if len(self.alive_players) > 1:
-            target_player = self.alive_players[1]
-            target_player.status = "dead"
-            tk.Label(self.frame, text=f"{target_player.name.capitalize()} {outcome_message}", font=("Arial", 14)).pack(pady=10)
-        else:
-            tk.Label(self.frame, text="Not enough players alive to proceed with this event.", font=("Arial", 14)).pack(pady=10)
-
-    def display_event_message(self, main_message, secondary_message):
-        tk.Label(self.frame, text=main_message, font=("Arial", 12)).pack(pady=10)
-        tk.Label(self.frame, text=secondary_message, font=("Arial, 14")).pack(pady=10)
+            tk.Label(self.frame, text="Not enough players alive for any suspicious action to be noteworthy.", font=("Arial", 14)).pack(pady=10)
