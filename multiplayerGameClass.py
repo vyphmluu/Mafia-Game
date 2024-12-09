@@ -8,6 +8,10 @@ class MultiplayerGameClass(GameClass):
         super().__init__(num_players, 2, main_frame, app)
         self.main_frame = main_frame  # Store the main_frame for UI updates
 
+    def start_day_phase(self):
+        """Handles the day phase for multiplayer mode, allowing players to vote."""
+        self.show_image(r"C:/Users/Murph/OneDrive/Desktop/Code/EECS581/Mafia/day_phase.png", self.multiplayer_day_phase)
+
     def multiplayer_day_phase(self):
         """Handles the day phase for multiplayer mode, allowing players to vote."""
         self.clear_frame()
@@ -99,8 +103,12 @@ class MultiplayerGameClass(GameClass):
         tk.Button(
             self.frame,
             text="Proceed to Night Phase",
-            command=self.multiplayer_night_phase
+            command=self.start_night_phase
         ).pack(pady=10)
+
+    def start_night_phase(self):
+        """Handles the Night Phase for multiplayer mode."""
+        self.show_image(r"C:/Users/Murph/OneDrive/Desktop/Code/EECS581/Mafia/night_phase.png", self.multiplayer_night_phase)
 
     def multiplayer_night_phase(self):
         """Handles the Night Phase for multiplayer mode."""
@@ -129,21 +137,10 @@ class MultiplayerGameClass(GameClass):
     
     def show_mafia_voting_screen(self):
         """Display the voting screen for the current Mafia player."""
+        # Get the current mafia player
         mafia_players = [p for p in self.player_list if p.role == "mafia" and p.status == "alive"]
-        
-        # Check if there are Mafia players left to act
-        if not mafia_players:
-            messagebox.showinfo("Game Info", "No Mafia members are alive to act.")
-            self.resolve_mafia_votes()  # Optionally resolve Mafia votes or move to the next phase
-            return
-        
-        # Ensure current_mafia_index is within bounds
-        if self.current_mafia_index >= len(mafia_players):
-            messagebox.showinfo("Game Info", "No more Mafia members left to vote.")
-            self.resolve_mafia_votes()  # Resolve votes or adjust game flow as needed
-            return
-
         mafia_player = mafia_players[self.current_mafia_index]
+
         self.clear_frame()
 
         # Display the current mafia player's name and instruction
@@ -177,7 +174,6 @@ class MultiplayerGameClass(GameClass):
             text="Submit Vote",
             command=lambda: self.submit_mafia_vote(mafia_player)
         ).pack(pady=10)
-
 
     def submit_mafia_vote(self, mafia_player):
         """Record the Mafia player's vote and move to the next Mafia player."""
@@ -343,7 +339,7 @@ class MultiplayerGameClass(GameClass):
         if self.current_role_index < len(self.player_list) - 1:
             tk.Button(self.frame, text="Next", command=self.next_player_role).pack(pady=10)
         else:
-            tk.Button(self.frame, text="Proceed to Day Phase", command=self.multiplayer_day_phase).pack(pady=10)
+            tk.Button(self.frame, text="Proceed to Day Phase", command=self.start_day_phase).pack(pady=10)
 
     def transition_screen(self):
         """Show a transition screen between players' role displays."""
@@ -534,9 +530,9 @@ class MultiplayerGameClass(GameClass):
         tk.Button(
             self.frame,
             text="Proceed to Day Phase",
-            command=self.multiplayer_day_phase
+            command=self.start_day_phase
         ).pack(pady=10)
-   
+
     def hurricane(self):
         tk.Label(
             self.frame,
@@ -565,18 +561,10 @@ class MultiplayerGameClass(GameClass):
             text="Oh no! A villager's house is on fire!",
             font=("Arial", 12),
         ).pack(pady=10)
-        
-        # Refresh the list of alive players to ensure it's up to date
         self.alive_players = [p for p in self.player_list if p.status == "alive"]
-        
-        # Ensure there are at least two alive players before accessing the second one
-        if len(self.alive_players) > 1:
-            target_player = self.alive_players[1]  # Assuming we want to affect the second player in the list
-            target_player.status = "dead"
-            tk.Label(self.frame, text=f"{target_player.name.capitalize()} was killed in the fire!", font=("Arial", 14)).pack(pady=10)
-        else:
-            # Handle the scenario where fewer than two players are alive
-            tk.Label(self.frame, text="Not enough players alive to spread the fire.", font=("Arial", 14)).pack(pady=10)
+        target_player = self.alive_players[1]
+        target_player.status = "dead"
+        tk.Label(self.frame, text=f"{target_player.name.capitalize()} was killed in the fire!", font=("Arial", 14)).pack(pady=10)        
 
     def suspicious_action(self):
         tk.Label(
@@ -584,10 +572,52 @@ class MultiplayerGameClass(GameClass):
             text="The word around the town is that someone has been doing some suspicious things.",
             font=("Arial", 12),
         ).pack(pady=10)
-        
-        # Ensure there are at least two alive players before accessing them
-        if len(self.alive_players) > 1:
-            target_player = self.alive_players[1]  # Target the second alive player in the list
-            tk.Label(self.frame, text=f"{target_player.name.capitalize()} has been hiding guns and knives in his house! Do with that info as you please.", font=("Arial", 14)).pack(pady=10)
-        else:
-            tk.Label(self.frame, text="Not enough players alive for any suspicious action to be noteworthy.", font=("Arial", 14)).pack(pady=10)
+        self.alive_players = [p for p in self.player_list if p.status == "alive"]
+        target_player = self.alive_players[1]
+        tk.Label(self.frame, text=f"{target_player.name.capitalize()} has been hiding guns and knives in his house! Do with that info as you please.", font=("Arial", 14)).pack(pady=10)
+
+    def show_image(self, image_path, next_phase_callback):
+        """Displays a PNG image and proceeds to the next phase when clicked."""
+        self.clear_frame()
+        try:
+            # Load the image
+            image = tk.PhotoImage(file=image_path)
+            
+            # Resize the image (set width and height, preserving aspect ratio)
+            max_width, max_height = 300, 300  # Desired dimensions
+            original_width = image.width()
+            original_height = image.height()
+
+            # Scale factors
+            scale_width = max_width / original_width
+            scale_height = max_height / original_height
+            scale = min(scale_width, scale_height)
+
+            # Apply scaling
+            new_width = int(original_width * scale)
+            new_height = int(original_height * scale)
+            resized_image = image.subsample(int(original_width / new_width), int(original_height / new_height))
+
+            # Display the resized image
+            label = tk.Label(self.frame, image=resized_image)
+            label.image = resized_image  # Keep a reference to avoid garbage collection
+            label.pack(pady=10)
+
+            # Add a button to proceed
+            proceed_button = tk.Button(
+                self.frame,
+                text="Proceed",
+                font=("Arial", 12),
+                command=next_phase_callback
+            )
+            proceed_button.pack(pady=10)
+
+        except Exception as e:
+            # Display an error message if the image fails to load
+            tk.Label(self.frame, text=f"Error loading image: {e}", font=("Arial", 12)).pack(pady=10)
+            tk.Button(
+                self.frame,
+                text="Continue",
+                font=("Arial", 12),
+                command=next_phase_callback
+            ).pack(pady=10)
