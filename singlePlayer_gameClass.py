@@ -56,10 +56,6 @@ class SinglePlayerMode:
         elif role == 'doctor':
             # Protect players at higher risk (non-Mafia, especially Detective)
             return max(cur_list, key=lambda x: x.status)  # Dummy logic; refine as needed
-        elif role == 'detective':
-            # Investigate new, uninvestigated players
-            uninvestigated = [p for p in cur_list if p not in player.investigated]
-            return random.choice(uninvestigated) if uninvestigated else random.choice(cur_list)
         elif role == 'villager':
             # Vote for suspected Mafia
             suspected_mafia = [p for p in cur_list if self.is_suspected_mafia(p)]
@@ -77,10 +73,6 @@ class SinglePlayerMode:
             # Protect high-value roles (Detective or critical Villager)
             protect_targets = [p for p in cur_list if p.role in ['detective', 'villager'] and p.status == 'alive']
             return max(protect_targets, key=lambda x: x.status)  # Prioritize active players
-        elif role == 'detective':
-            # Check uninvestigated or suspicious players
-            unknown_roles = [p for p in cur_list if p.role is None and p.status == 'alive']
-            return random.choice(unknown_roles) if unknown_roles else random.choice(cur_list)
         elif role == 'villager':
             # Vote strategically against known Mafia
             return self.vote_mafia_strategy(cur_list)
@@ -150,9 +142,9 @@ class SinglePlayerMode:
         # Doctor protects based on previous targeting or critical role
         return max(targets, key=lambda x: (self.target_history.get(x.name, 0), x.role in ['detective']))
 
-    def detective_select_target(self, targets):
+    #def detective_select_target(self, targets):
         # Detective checks a new player each night, prioritizing those with suspicious behavior
-        return random.choice(targets)  # Replace with more nuanced logic based on behavior
+        #return random.choice(targets)  # Replace with more nuanced logic based on behavior
 
     def simulate_strategic_voting(self):
         for player in self.player_list:
@@ -205,14 +197,14 @@ class SinglePlayerMode:
         """ Dynamically assigns roles to players based on the number of players. """
         # Calculate number of roles based on player count
         num_mafia = max(1, self.num_players // 3)  # At least 1 mafia, ~1/3 of players
-        num_detective = 1 if self.num_players >= 5 else 0  # 1 detective for 5+ players
+        num_detective = 0 if self.num_players >= 5 else 0  # 1 detective for 5+ players
         num_doctors = 1 if self.num_players >= 4 else 0  # 1 doctor for 4+ players
         num_villagers = self.num_players - (num_mafia + num_detective + num_doctors)  # Remaining players are villagers
 
         # Create a role list based on calculated numbers
         roles = (
             ['mafia'] * num_mafia +
-            ['detective'] * num_detective +
+            #['detective'] * num_detective +
             ['doctor'] * num_doctors +
             ['villager'] * num_villagers
         )
@@ -334,70 +326,6 @@ class SinglePlayerMode:
         continue_button = tk.Button(self.frame, text="Enter Day Phase", command=self.singleplayer_voting_phase)
         continue_button.pack()
         print("Day Phase: Time to vote!")
-        """
-        # Dictionary to store votes
-        votes = {}
-
-        # Call each player for their turn
-        for player in self.player_list:
-            if player.status == "alive":
-                if self.game_mode == 2 or (self.game_mode == 1 and player.name == self.player_list[0].name):
-                    # Clear the console for privacy
-                    if self.game_mode == 2:
-                        print(f"{player.name.capitalize()}, please come to the screen.")
-
-                        # Clear agaonsole()
-
-                # Display private information based on role or attributes
-                if player.role == "mafia":
-                    print(f"Your Mafia allies are: {self.mafia_ally_list(player.name)}")
-                elif player.attribute == "Intuition":
-                    self.villager_intuition(player)
-                elif player.attribute == "Suspicion Radar":
-                    self.suspicion_radar(player, self.mafia_votes)
-
-                # Show available players to vote for
-                alive_players = [p.name for p in self.player_list if p.status == "alive" and p.name != player.name]
-                print("Players available to vote for:", ', '.join(alive_players))
-
-                # Voting process
-                if self.game_mode == 2 or (self.game_mode == 1 and player.name == self.main_player):
-                    vote_entry = tk.Entry(self.frame)
-                    vote_entry.pack()
-
-                    #while vote_for not in [p.lower() for p in alive_players]:
-                        #print(f"Invalid choice. Please select from: {', '.join(alive_players)}")
-
-                    # Record the vote
-                    votes[vote_for] = votes.get(vote_for, 0) + 1
-                elif self.game_mode == 1 and player.name != self.main_player:
-                    vote_for = self.easy_ai(alive_players)
-                    votes[vote_for] = votes.get(vote_for, 0) + 1
-                    print(f"{player.name} (AI) votes for {vote_for.capitalize()}.")
-
-                # Clear the console before transitioning to the next player
-            else:
-                print(f"{player.name.capitalize()} is not in the game.")
-        
-
-        # Determine the player with the most votes
-        if votes:
-            max_votes = max(votes.values())
-            candidates = [name for name, count in votes.items() if count == max_votes]
-
-            # Handle ties with random selection
-            eliminated_player = random.choice(candidates) if len(candidates) > 1 else candidates[0]
-            eliminated_player_obj = next((p for p in self.player_list if p.name.lower() == eliminated_player.lower()), None)
-
-            # Eliminate the chosen player
-            if eliminated_player_obj:
-                eliminated_player_obj.status = "dead"
-                print(f"{eliminated_player_obj.name.capitalize()} has been eliminated.")
-                self.update_role_count(eliminated_player_obj.role, increment=False)
-
-        # Check win conditions after the voting phase
-        self.check_win_conditions("day")
-        """
 
     """ =============================================================== NIGHT PHASE CODE ======================================================================= """
 
@@ -435,9 +363,9 @@ class SinglePlayerMode:
         elif self.player_list[0].role == "villager":
             button = tk.Button(self.frame, text="Close your eyes...", command=lambda: self.night_phase_villager(alive_players, mafia_votes, target))
             button.pack()
-        else:
-            button = tk.Button(self.frame, text="Close your eyes...", command=lambda: self.night_phase_detective(alive_players, target))
-            button.pack()
+        #else:
+            #button = tk.Button(self.frame, text="Close your eyes...", command=lambda: self.night_phase_detective(alive_players, target))
+            #button.pack()
 
     def night_phase_mafia(self, alive_players, target):
         # Mafia Voting Phase
@@ -554,13 +482,10 @@ class SinglePlayerMode:
 
         print("Villagers, close your eyes.")
 
-    def night_phase_detective(self, alive_players, target):
-        self.singleplayer_clear_frame_ui()
-        button = tk.Button(self.frame, text="Sleep through the night...", command=lambda: self.conclude_night_phase(target))
-        button.pack()
-        
-        
-        
+    #def night_phase_detective(self, alive_players, target):
+        #self.singleplayer_clear_frame_ui()
+        #button = tk.Button(self.frame, text="Sleep through the night...", command=lambda: self.conclude_night_phase(target))
+        #button.pack()
 
     def conclude_night_phase(self, target):
         self.singleplayer_clear_frame_ui()
@@ -592,7 +517,6 @@ class SinglePlayerMode:
 
     """ =================================================================================================================================== """
 
-
     def check_win_conditions(self, signal):
         self.singleplayer_clear_frame_ui()
         # Check if the village wins (all mafia members are eliminated)
@@ -618,11 +542,11 @@ class SinglePlayerMode:
         if signal == "day":
             #button = tk.Button(self.frame, text="Continue", command=self.night_phase)
             #button.pack()
-            self.night_phase()
+            self.show_image(r"C:/Users/Murph/OneDrive/Desktop/Code/EECS581/Mafia/night_phase.png", self.night_phase)
         elif signal == "night":
             #button = tk.Button(self.frame, text="Continue", command=self.day_phase)
             #button.pack()
-            self.day_phase()
+            self.show_image(r"C:/Users/Murph/OneDrive/Desktop/Code/EECS581/Mafia/day_phase.png", self.day_phase)
         else:
             button = tk.Button(self.frame, text="Continue", command=self.end_game)
             button.pack()
@@ -661,3 +585,49 @@ class SinglePlayerMode:
                 history[cur_player] = day_vote
         self.mafia_votes = history
         return self.mafia_votes
+    
+    def show_image(self, image_path, next_phase_callback):
+        """Displays a PNG image and proceeds to the next phase when clicked."""
+        self.clear_frame()
+        try:
+            # Load the image
+            image = tk.PhotoImage(file=image_path)
+            
+            # Resize the image (set width and height, preserving aspect ratio)
+            max_width, max_height = 300, 300  # Desired dimensions
+            original_width = image.width()
+            original_height = image.height()
+
+            # Scale factors
+            scale_width = max_width / original_width
+            scale_height = max_height / original_height
+            scale = min(scale_width, scale_height)
+
+            # Apply scaling
+            new_width = int(original_width * scale)
+            new_height = int(original_height * scale)
+            resized_image = image.subsample(int(original_width / new_width), int(original_height / new_height))
+
+            # Display the resized image
+            label = tk.Label(self.frame, image=resized_image)
+            label.image = resized_image  # Keep a reference to avoid garbage collection
+            label.pack(pady=10)
+
+            # Add a button to proceed
+            proceed_button = tk.Button(
+                self.frame,
+                text="Proceed",
+                font=("Arial", 12),
+                command=next_phase_callback
+            )
+            proceed_button.pack(pady=10)
+
+        except Exception as e:
+            # Display an error message if the image fails to load
+            tk.Label(self.frame, text=f"Error loading image: {e}", font=("Arial", 12)).pack(pady=10)
+            tk.Button(
+                self.frame,
+                text="Continue",
+                font=("Arial", 12),
+                command=next_phase_callback
+            ).pack(pady=10)
